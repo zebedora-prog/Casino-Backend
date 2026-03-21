@@ -1,33 +1,54 @@
 const express = require("express");
 const app = express();
 
-let playerBalance = 1000;
+app.use(express.json());
 
-// Base route
+// 🧠 In-memory user storage
+let users = {};
+let nextUserId = 1;
+
+// ✅ Health check
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
 
-// Spin route
+// 👤 Register user
+app.post("/register", (req, res) => {
+  const userId = nextUserId++;
+  users[userId] = {
+    balance: 1000
+  };
+
+  res.json({
+    message: "User created",
+    userId: userId,
+    balance: users[userId].balance
+  });
+});
+
+// 🎰 Spin
 app.get("/spin", (req, res) => {
+  const userId = req.query.userId;
   const bet = parseInt(req.query.bet) || 10;
 
-  if (bet > playerBalance) {
+  if (!users[userId]) {
+    return res.json({ error: "Invalid userId" });
+  }
+
+  if (bet > users[userId].balance) {
     return res.json({
       error: "Not enough balance",
-      balance: playerBalance
+      balance: users[userId].balance
     });
   }
 
-  playerBalance -= bet;
+  users[userId].balance -= bet;
 
   const symbols = ["🍒", "🍋", "🔔", "💎", "7️⃣"];
 
   const reel1 = symbols[Math.floor(Math.random() * symbols.length)];
   const reel2 = symbols[Math.floor(Math.random() * symbols.length)];
   const reel3 = symbols[Math.floor(Math.random() * symbols.length)];
-
-  const result = [reel1, reel2, reel3];
 
   let multiplier = 0;
 
@@ -42,17 +63,17 @@ app.get("/spin", (req, res) => {
   }
 
   const win = bet * multiplier;
-  playerBalance += win;
+  users[userId].balance += win;
 
   res.json({
-    reels: result,
-    bet: bet,
-    win: win,
-    balance: playerBalance
+    reels: [reel1, reel2, reel3],
+    bet,
+    win,
+    balance: users[userId].balance
   });
 });
 
-// 🚨 REQUIRED for Railway
+// 🚨 Required for Railway
 const PORT = process.env.PORT;
 
 app.listen(PORT, "0.0.0.0", () => {
