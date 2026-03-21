@@ -3,11 +3,22 @@ const mongoose = require("mongoose");
 
 const app = express();
 app.use(express.json());
+mongoose.connect(process.env.MONGO_URI, {
+  serverSelectionTimeoutMS: 5000
+})
+.then(() => {
+  console.log("✅ MongoDB connected");
 
-// 🔗 Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch(err => console.log(err));
+  // START SERVER ONLY AFTER DB CONNECTS
+  
+    console.log("Server running on port " + process.env.PORT);
+  });
+
+})
+.catch(err => {
+  console.error("❌ MongoDB connection failed:");
+  console.error(err);
+});
 
 // 👤 User schema
 const User = mongoose.model("User", {
