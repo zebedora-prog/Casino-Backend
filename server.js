@@ -13,7 +13,7 @@ app.get("/", (req, res) => {
 });
 
 // 👤 Register user
-app.post("/register", (req, res) => {
+app.get("/register", (req, res) => {
   const userId = nextUserId++;
   users[userId] = {
     balance: 1000
