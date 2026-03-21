@@ -1,48 +1,52 @@
 const express = require("express");
-const app = express();
+const mongoose = require("mongoose");
 
+const app = express();
 app.use(express.json());
 
-// 🧠 In-memory user storage
-let users = {};
-let nextUserId = 1;
+// 🔗 Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB connected"))
+  .catch(err => console.log(err));
+
+// 👤 User schema
+const User = mongoose.model("User", {
+  balance: Number
+});
 
 // ✅ Health check
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
 
-// 👤 Register user
-app.get("/register", (req, res) => {
-  const userId = nextUserId++;
-  users[userId] = {
-    balance: 1000
-  };
+// 👤 Register
+app.get("/register", async (req, res) => {
+  const user = new User({ balance: 1000 });
+  await user.save();
 
   res.json({
     message: "User created",
-    userId: userId,
-    balance: users[userId].balance
+    userId: user._id,
+    balance: user.balance
   });
 });
 
 // 🎰 Spin
-app.get("/spin", (req, res) => {
-  const userId = req.query.userId;
-  const bet = parseInt(req.query.bet) || 10;
+app.get("/spin", async (req, res) => {
+  const { userId, bet } = req.query;
+  const betAmount = parseInt(bet) || 10;
 
-  if (!users[userId]) {
-    return res.json({ error: "Invalid userId" });
-  }
+  const user = await User.findById(userId);
+  if (!user) return res.json({ error: "Invalid userId" });
 
-  if (bet > users[userId].balance) {
+  if (betAmount > user.balance) {
     return res.json({
       error: "Not enough balance",
-      balance: users[userId].balance
+      balance: user.balance
     });
   }
 
-  users[userId].balance -= bet;
+  user.balance -= betAmount;
 
   const symbols = ["🍒", "🍋", "🔔", "💎", "7️⃣"];
 
@@ -62,18 +66,20 @@ app.get("/spin", (req, res) => {
     }
   }
 
-  const win = bet * multiplier;
-  users[userId].balance += win;
+  const win = betAmount * multiplier;
+  user.balance += win;
+
+  await user.save();
 
   res.json({
     reels: [reel1, reel2, reel3],
-    bet,
+    bet: betAmount,
     win,
-    balance: users[userId].balance
+    balance: user.balance
   });
 });
 
-// 🚨 Required for Railway
+// 🚨 Required
 const PORT = process.env.PORT;
 
 app.listen(PORT, "0.0.0.0", () => {
