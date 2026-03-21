@@ -3,14 +3,21 @@ const mongoose = require("mongoose");
 
 const app = express();
 app.use(express.json());
+
+// 👤 User schema
+const User = mongoose.model("User", {
+  balance: Number
+});
+
+// 🔗 Connect to MongoDB FIRST
 mongoose.connect(process.env.MONGO_URI, {
   serverSelectionTimeoutMS: 5000
 })
 .then(() => {
   console.log("✅ MongoDB connected");
 
-  // START SERVER ONLY AFTER DB CONNECTS
-  
+  // ✅ Start server ONLY after DB connects
+  app.listen(process.env.PORT, "0.0.0.0", () => {
     console.log("Server running on port " + process.env.PORT);
   });
 
@@ -18,11 +25,6 @@ mongoose.connect(process.env.MONGO_URI, {
 .catch(err => {
   console.error("❌ MongoDB connection failed:");
   console.error(err);
-});
-
-// 👤 User schema
-const User = mongoose.model("User", {
-  balance: Number
 });
 
 // ✅ Health check
@@ -88,11 +90,4 @@ app.get("/spin", async (req, res) => {
     win,
     balance: user.balance
   });
-});
-
-// 🚨 Required
-const PORT = process.env.PORT;
-
-app.listen(PORT, "0.0.0.0", () => {
-  console.log("Server running on port " + PORT);
 });
