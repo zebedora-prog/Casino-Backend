@@ -6,8 +6,22 @@ app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
 
-// 🎰 ADD THIS HERE (same file)
+let playerBalance = 1000; // 🪙 starting coins
+
 app.get("/spin", (req, res) => {
+  const bet = parseInt(req.query.bet) || 10;
+
+  // ❌ Not enough money
+  if (bet > playerBalance) {
+    return res.json({
+      error: "Not enough balance",
+      balance: playerBalance
+    });
+  }
+
+  // 💸 Deduct bet
+  playerBalance -= bet;
+
   const symbols = ["🍒", "🍋", "🔔", "💎", "7️⃣"];
 
   const reel1 = symbols[Math.floor(Math.random() * symbols.length)];
@@ -16,27 +30,27 @@ app.get("/spin", (req, res) => {
 
   const result = [reel1, reel2, reel3];
 
-  let win = 0;
+  let multiplier = 0;
 
   if (reel1 === reel2 && reel2 === reel3) {
     switch (reel1) {
-      case "🍒": win = 10; break;
-      case "🍋": win = 20; break;
-      case "🔔": win = 50; break;
-      case "💎": win = 100; break;
-      case "7️⃣": win = 500; break;
+      case "🍒": multiplier = 2; break;
+      case "🍋": multiplier = 3; break;
+      case "🔔": multiplier = 5; break;
+      case "💎": multiplier = 10; break;
+      case "7️⃣": multiplier = 50; break;
     }
   }
 
+  const win = bet * multiplier;
+
+  // 💰 Add winnings
+  playerBalance += win;
+
   res.json({
     reels: result,
-    win: win
+    bet: bet,
+    win: win,
+    balance: playerBalance
   });
-});
-
-// 🚨 Keep this at the bottom
-const PORT = process.env.PORT;
-
-app.listen(PORT, "0.0.0.0", () => {
-  console.log("Server running on port " + PORT);
 });
