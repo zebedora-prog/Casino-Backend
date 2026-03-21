@@ -6,6 +6,7 @@ app.use(express.json());
 
 // 👤 User schema
 const User = mongoose.model("User", {
+  username: String,
   balance: Number
 });
 
@@ -45,19 +46,31 @@ app.get("/register", async (req, res) => {
 });
 
 // 🎰 Spin
-app.get("/spin", async (req, res) => {
-  const { userId, bet } = req.query;
-  const betAmount = parseInt(bet) || 10;
+app.get("/register", async (req, res) => {
+  const { username } = req.query;
 
-  const user = await User.findById(userId);
-  if (!user) return res.json({ error: "Invalid userId" });
-
-  if (betAmount > user.balance) {
+  const existing = await User.findOne({ username });
+  if (existing) {
     return res.json({
-      error: "Not enough balance",
-      balance: user.balance
+      message: "User already exists",
+      userId: existing._id,
+      balance: existing.balance
     });
   }
+
+  const user = new User({
+    username,
+    balance: 1000
+  });
+
+  await user.save();
+
+  res.json({
+    message: "User created",
+    userId: user._id,
+    balance: user.balance
+  });
+});
 
   user.balance -= betAmount;
 
