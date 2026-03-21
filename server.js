@@ -10,6 +10,18 @@ const User = mongoose.model("User", {
   balance: Number
 });
 
+// 🎰 Slot Machines
+const machines = {
+  basic: {
+    symbols: ["🍒", "🍋", "🔔"],
+    payouts: { "🍒": 2, "🍋": 3, "🔔": 5 }
+  },
+  premium: {
+    symbols: ["💎", "7️⃣", "👑"],
+    payouts: { "💎": 10, "7️⃣": 25, "👑": 100 }
+  }
+};
+
 // 🔗 Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, {
   serverSelectionTimeoutMS: 5000
@@ -63,10 +75,10 @@ app.get("/register", async (req, res) => {
   }
 });
 
-// 🎰 Spin
+// 🎰 Spin (MULTI-MACHINE)
 app.get("/spin", async (req, res) => {
   try {
-    const { userId, bet } = req.query;
+    const { userId, bet, machine } = req.query;
     const betAmount = parseInt(bet) || 10;
 
     const user = await User.findById(userId);
@@ -82,11 +94,14 @@ app.get("/spin", async (req, res) => {
       });
     }
 
+    // Select machine
+    const selected = machines[machine] || machines.basic;
+    const symbols = selected.symbols;
+
     // Deduct bet
     user.balance -= betAmount;
 
-    const symbols = ["🍒", "🍋", "🔔", "💎", "7️⃣"];
-
+    // Spin reels
     const reel1 = symbols[Math.floor(Math.random() * symbols.length)];
     const reel2 = symbols[Math.floor(Math.random() * symbols.length)];
     const reel3 = symbols[Math.floor(Math.random() * symbols.length)];
@@ -94,13 +109,7 @@ app.get("/spin", async (req, res) => {
     let multiplier = 0;
 
     if (reel1 === reel2 && reel2 === reel3) {
-      switch (reel1) {
-        case "🍒": multiplier = 2; break;
-        case "🍋": multiplier = 3; break;
-        case "🔔": multiplier = 5; break;
-        case "💎": multiplier = 10; break;
-        case "7️⃣": multiplier = 50; break;
-      }
+      multiplier = selected.payouts[reel1] || 0;
     }
 
     const win = betAmount * multiplier;
@@ -109,6 +118,7 @@ app.get("/spin", async (req, res) => {
     await user.save();
 
     res.json({
+      machine: machine || "basic",
       reels: [reel1, reel2, reel3],
       bet: betAmount,
       win,
