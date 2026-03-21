@@ -1,17 +1,17 @@
 const express = require("express");
 const app = express();
 
-// ✅ Base route
+let playerBalance = 1000;
+
+// Base route
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
 
-let playerBalance = 1000; // 🪙 starting coins
-
+// Spin route
 app.get("/spin", (req, res) => {
   const bet = parseInt(req.query.bet) || 10;
 
-  // ❌ Not enough money
   if (bet > playerBalance) {
     return res.json({
       error: "Not enough balance",
@@ -19,7 +19,6 @@ app.get("/spin", (req, res) => {
     });
   }
 
-  // 💸 Deduct bet
   playerBalance -= bet;
 
   const symbols = ["🍒", "🍋", "🔔", "💎", "7️⃣"];
@@ -43,8 +42,6 @@ app.get("/spin", (req, res) => {
   }
 
   const win = bet * multiplier;
-
-  // 💰 Add winnings
   playerBalance += win;
 
   res.json({
@@ -53,4 +50,11 @@ app.get("/spin", (req, res) => {
     win: win,
     balance: playerBalance
   });
+});
+
+// 🚨 REQUIRED for Railway
+const PORT = process.env.PORT;
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log("Server running on port " + PORT);
 });
