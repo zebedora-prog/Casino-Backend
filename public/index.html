@@ -98,21 +98,8 @@ function changeBet(bet) {
   document.getElementById("betDisplay").innerText = bet;
 }
 
-async function spin() {
-  if (!userId) return alert("Login first");
-
-  const reels = document.querySelectorAll(".reel");
-  const result = document.getElementById("result");
-
-  const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑","🃏"];
-
-  const intervals = [];
-
-  reels.forEach((r, i) => {
-    intervals[i] = setInterval(() => {
-      r.innerText = symbols[Math.floor(Math.random()*symbols.length)];
-    }, 100);
-  });
+async function spin()
+const result = document.getElementById("result");
 
   const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}`);
   const data = await res.json();
