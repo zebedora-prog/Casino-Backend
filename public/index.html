@@ -118,7 +118,9 @@ async function spin() {
   const data = await res.json();
 
   reels.forEach((r, i) => {
-    setTimeout(() => {
+    setTimeout(() => { checkPaylines(grid, data);
+
+}, reels.length * 300);
       clearInterval(intervals[i]);
       r.innerText = data.reels[i];
     }, i * 300);
