@@ -87,6 +87,21 @@
       font-size: 18px;
       min-height: 24px;
     }
+    /* 💥 WIN FLASH */
+.flash {
+  animation: flash 0.4s ease;
+}
+
+@keyframes flash {
+  0% { background: white; }
+  100% { background: transparent; }
+}
+
+/* ✨ GLOW */
+.win-glow {
+  color: gold;
+  text-shadow: 0 0 10px gold, 0 0 20px orange, 0 0 30px yellow;
+}
   </style>
 </head>
 
@@ -194,11 +209,28 @@ async function spin() {
 
     setTimeout(() => {
       if (data.win > 0) {
-        winSound.play();
-        result.innerText = "🎉 WON " + data.win;
-      } else {
-        result.innerText = "Try again";
-      }
+  winSound.play();
+
+  // 💥 Flash screen
+  document.body.classList.add("flash");
+  setTimeout(() => document.body.classList.remove("flash"), 300);
+
+  // ✨ Glow reels
+  r1.classList.add("win-glow");
+  r2.classList.add("win-glow");
+  r3.classList.add("win-glow");
+
+  setTimeout(() => {
+    r1.classList.remove("win-glow");
+    r2.classList.remove("win-glow");
+    r3.classList.remove("win-glow");
+  }, 1000);
+
+  result.innerText = "🎉 WON " + data.win;
+
+} else {
+  result.innerText = "Try again";
+}
       updateUI(data);
     }, 900);
 
