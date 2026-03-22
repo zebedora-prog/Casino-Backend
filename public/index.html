@@ -20,12 +20,12 @@
     .slots {
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 6px;
     }
 
     .row {
       display: flex;
-      gap: 5px;
+      gap: 6px;
     }
 
     .reel {
@@ -39,40 +39,16 @@
       justify-content: center;
     }
 
-    /* 🎯 PAYLINES */
+    /* 🎯 dynamic payline */
     .payline {
       position: absolute;
       height: 4px;
-      width: 0%;
-      left: 5%;
+      background: red;
       display: none;
       z-index: 10;
       border-radius: 5px;
       box-shadow: 0 0 10px red, 0 0 20px red;
     }
-
-    @keyframes drawLine {
-      from { width: 0%; }
-      to { width: 90%; }
-    }
-
-    #line-top { top: 20%; background: red; }
-    #line-mid { top: 50%; background: yellow; }
-    #line-bot { top: 80%; background: cyan; }
-
-    .diag {
-      top: 50%;
-      transform: translateX(-50%) rotate(25deg);
-      background: lime;
-    }
-
-    #line-diag2 {
-      transform: translateX(-50%) rotate(-25deg);
-    }
-
-    #line-zig1 { background: orange; }
-    #line-zig2 { background: pink; }
-    #line-zig3 { background: lime; }
 
     .win-symbol {
       animation: glow 0.4s infinite alternate;
@@ -110,19 +86,7 @@
 <audio id="winSound" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"></audio>
 
 <div id="slotWrapper">
-
-  <!-- paylines -->
-  <div id="line-top" class="payline"></div>
-  <div id="line-mid" class="payline"></div>
-  <div id="line-bot" class="payline"></div>
-
-  <div id="line-diag1" class="payline diag"></div>
-  <div id="line-diag2" class="payline diag"></div>
-
-  <div id="line-zig1" class="payline diag"></div>
-  <div id="line-zig2" class="payline diag"></div>
-  <div id="line-zig3" class="payline diag"></div>
-
+  <div id="activeLine" class="payline"></div>
   <div class="slots" id="slots"></div>
 </div>
 
@@ -187,7 +151,6 @@ async function spin() {
   if (data.error) return alert(data.error);
 
   const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑","🃏"];
-
   const intervals = [];
 
   // 🎰 spin animation
@@ -200,7 +163,7 @@ async function spin() {
     }, 80);
   }
 
-  // 🛑 stop reels
+  // 🛑 stop reels one-by-one
   for (let c = 0; c < cols; c++) {
     setTimeout(() => {
       clearInterval(intervals[c]);
@@ -227,7 +190,7 @@ async function spin() {
   }, 500 + cols * 300);
 }
 
-// 🎯 ACCURATE WIN DETECTION
+// 🎯 accurate win detection (LEFT → RIGHT)
 function getWinningCells(cells) {
   let first = cells[0].innerText;
   let winning = [cells[0]];
@@ -249,44 +212,61 @@ function getWinningCells(cells) {
   return winning.length >= 3 ? winning : null;
 }
 
-// 🎯 PAYLINES
+// 🎯 draw perfect line
+function drawAccurateLine(cells) {
+  const el = document.getElementById("activeLine");
+  const wrapper = document.getElementById("slotWrapper");
+
+  const first = cells[0].getBoundingClientRect();
+  const last = cells[cells.length - 1].getBoundingClientRect();
+  const parent = wrapper.getBoundingClientRect();
+
+  const x1 = first.left + first.width / 2 - parent.left;
+  const y1 = first.top + first.height / 2 - parent.top;
+
+  const x2 = last.left + last.width / 2 - parent.left;
+  const y2 = last.top + last.height / 2 - parent.top;
+
+  const length = Math.hypot(x2 - x1, y2 - y1);
+  const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+
+  el.style.display = "block";
+  el.style.width = length + "px";
+  el.style.left = x1 + "px";
+  el.style.top = y1 + "px";
+  el.style.transform = `rotate(${angle}deg)`;
+  el.style.transformOrigin = "0 0";
+
+  return el;
+}
+
+// 🎯 paylines
 function checkPaylines(grid) {
   const lines = [
-    { cells: [grid[0][0],grid[0][1],grid[0][2],grid[0][3],grid[0][4]], id:"line-top" },
-    { cells: [grid[1][0],grid[1][1],grid[1][2],grid[1][3],grid[1][4]], id:"line-mid" },
-    { cells: [grid[2][0],grid[2][1],grid[2][2],grid[2][3],grid[2][4]], id:"line-bot" },
+    [grid[0][0],grid[0][1],grid[0][2],grid[0][3],grid[0][4]],
+    [grid[1][0],grid[1][1],grid[1][2],grid[1][3],grid[1][4]],
+    [grid[2][0],grid[2][1],grid[2][2],grid[2][3],grid[2][4]],
 
-    { cells: [grid[0][0],grid[1][1],grid[2][2],grid[1][3],grid[0][4]], id:"line-diag1" },
-    { cells: [grid[2][0],grid[1][1],grid[0][2],grid[1][3],grid[2][4]], id:"line-diag2" },
+    [grid[0][0],grid[1][1],grid[2][2],grid[1][3],grid[0][4]],
+    [grid[2][0],grid[1][1],grid[0][2],grid[1][3],grid[2][4]],
 
-    { cells: [grid[0][0],grid[1][1],grid[0][2],grid[1][3],grid[0][4]], id:"line-zig1" },
-    { cells: [grid[2][0],grid[1][1],grid[2][2],grid[1][3],grid[2][4]], id:"line-zig2" },
-    { cells: [grid[1][0],grid[0][1],grid[1][2],grid[2][3],grid[1][4]], id:"line-zig3" }
+    [grid[0][0],grid[1][1],grid[0][2],grid[1][3],grid[0][4]],
+    [grid[2][0],grid[1][1],grid[2][2],grid[1][3],grid[2][4]],
+    [grid[1][0],grid[0][1],grid[1][2],grid[2][3],grid[1][4]]
   ];
 
   lines.forEach(line => {
-    const winCells = getWinningCells(line.cells);
+    const winCells = getWinningCells(line);
 
     if (winCells) {
-      const el = document.getElementById(line.id);
+      const el = drawAccurateLine(winCells);
 
-      if (el) {
-        el.style.display = "block";
-        el.style.animation = "none";
-
-        setTimeout(() => {
-          el.style.animation = "drawLine 0.4s ease-out forwards";
-        }, 10);
-      }
-
-      // ✅ ONLY highlight actual winning symbols
       winCells.forEach(cell => cell.classList.add("win-symbol"));
 
       setTimeout(() => {
-        if (el) {
-          el.style.display = "none";
-          el.style.width = "0%";
-        }
+        el.style.display = "none";
+        el.style.width = "0px";
+        el.style.transform = "none";
 
         winCells.forEach(cell => cell.classList.remove("win-symbol"));
       }, 1500);
