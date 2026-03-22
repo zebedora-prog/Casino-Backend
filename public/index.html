@@ -183,7 +183,10 @@ console.log("DATA RECEIVED:", data);
       clearInterval(intervals[c]); // ALWAYS stop first
 
      clearInterval(intervals[c]); // ALWAYS stop first
-
+// 🚨 emergency stop (in case something breaks)
+setTimeout(() => {
+  intervals.forEach(i => clearInterval(i));
+}, 3000);
     }, 700 + c * 300);
   }
 
