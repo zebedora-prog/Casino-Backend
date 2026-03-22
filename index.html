@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Casino Game</title>
+</head>
+<body style="text-align:center; font-family:sans-serif;">
+
+  <h1>🎰 Casino Game</h1>
+
+  <input id="username" placeholder="Enter username">
+  <button onclick="register()">Register / Login</button>
+
+  <h2 id="balance"></h2>
+  <h3 id="level"></h3>
+
+  <h1 id="reels">🎰 🎰 🎰</h1>
+
+  <button onclick="spin()">SPIN</button>
+  <button onclick="daily()">Daily Reward</button>
+
+  <script>
+    let userId = "";
+
+    const API = "https://win-win-production.up.railway.app";
+
+    async function register() {
+      const username = document.getElementById("username").value;
+
+      const res = await fetch(`${API}/register?username=${username}`);
+      const data = await res.json();
+
+      userId = data.userId;
+
+      updateUI(data);
+    }
+
+    async function spin() {
+      const res = await fetch(`${API}/spin?userId=${userId}&bet=50&machine=basic`);
+      const data = await res.json();
+
+      document.getElementById("reels").innerText = data.reels.join(" ");
+
+      updateUI(data);
+    }
+
+    async function daily() {
+      const res = await fetch(`${API}/daily?userId=${userId}`);
+      const data = await res.json();
+
+      alert(JSON.stringify(data));
+      updateUI(data);
+    }
+
+    function updateUI(data) {
+      if (data.balance !== undefined)
+        document.getElementById("balance").innerText = "Balance: " + data.balance;
+
+      if (data.level !== undefined)
+        document.getElementById("level").innerText = "Level: " + data.level;
+    }
+  </script>
+
+</body>
+</html>
