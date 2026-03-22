@@ -169,15 +169,21 @@ for (let c = 0; c < grid[0].length; c++) {
       grid[r][c].innerText = data.reels[c];
     }
 
-  }, 400 + c * 300); // delay per reel
+  }, 500 + c * 300); // delay per reel
 }
 
   // 🎉 RESULT
+ setTimeout(() => {
+
   if (data.win > 0) {
     result.innerText = "🎉 WIN " + data.win;
   } else {
     result.innerText = "Try again";
   }
+
+  checkPaylines(grid, data);
+
+}, 500 + grid[0].length * 300);
 
   // 🎯 PAYLINES
   checkPaylines(grid, data);
