@@ -185,14 +185,13 @@ async function spin() {
 
   // 🎰 FAKE SPIN
   const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑","🃏"];
-  const intervals = [];
 
-  reels.forEach((reel, i) => {
-    const interval = setInterval(() => {
-      reel.innerText = symbols[Math.floor(Math.random() * symbols.length)];
-    }, 100);
-    intervals.push(interval);
-  });
+// ✅ THIS CREATES 5 REELS
+const reelCount = parseInt(req.query.reels) || 5;
+
+  const reels = Array.from({ length: 5 }, () =>
+  symbols[Math.floor(Math.random() * symbols.length)]
+);
 
   const machine = document.getElementById("machine").value;
 
