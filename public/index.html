@@ -2,31 +2,92 @@
 <html>
 <head>
   <title>Casino Slots</title>
+
   <style>
-    body { background: black; color: white; text-align: center; font-family: Arial; }
-    .slots { display: flex; justify-content: center; gap: 10px; margin-top: 30px; }
-    .reel { width: 70px; height: 70px; font-size: 40px; border: 2px solid gold; display: flex; align-items: center; justify-content: center; }
-    button { padding: 10px; margin: 5px; }
-    .win { color: lime; }
+    body {
+      background: radial-gradient(circle, #111, #000);
+      color: white;
+      text-align: center;
+      font-family: Arial;
+    }
+
+    h1 {
+      color: gold;
+      text-shadow: 0 0 10px gold;
+    }
+
+    .slots {
+      display: inline-block;
+      margin-top: 30px;
+      padding: 10px;
+      border: 3px solid gold;
+      border-radius: 10px;
+      background: #111;
+    }
+
+    .row {
+      display: flex;
+    }
+
+    .reel {
+      width: 70px;
+      height: 70px;
+      font-size: 40px;
+      border: 2px solid gold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 2px;
+      background: black;
+      transition: 0.2s;
+    }
+
+    .reel.win {
+      background: gold;
+      color: black;
+      box-shadow: 0 0 15px gold;
+      transform: scale(1.1);
+    }
+
+    button {
+      padding: 10px;
+      margin: 5px;
+      background: black;
+      color: gold;
+      border: 1px solid gold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: gold;
+      color: black;
+    }
+
+    #result {
+      font-size: 20px;
+      margin-top: 15px;
+    }
   </style>
 </head>
+
 <body>
 
-<h1>🎰 Slots 🎰</h1>
+<h1>🎰 Vegas Slots 🎰</h1>
 
-<input id="username">
+<input id="username" placeholder="Enter username">
 <button onclick="register()">Login</button>
 
 <p>Bet: <span id="betDisplay">10</span></p>
 <button onclick="changeBet(10)">10</button>
 <button onclick="changeBet(50)">50</button>
 
+<br><br>
 <button onclick="spin()">SPIN</button>
 
 <div class="slots" id="slots"></div>
 
 <p id="result"></p>
-<p>Balance: <span id="balance"></span></p>
+<p>Balance: <span id="balance">0</span></p>
 
 <script>
 const API = "https://win-win-production.up.railway.app";
@@ -34,65 +95,144 @@ const API = "https://win-win-production.up.railway.app";
 let userId = null;
 let betAmount = 10;
 
+// 🎰 CREATE 3x5 GRID
 function createReels() {
   const slots = document.getElementById("slots");
   slots.innerHTML = "";
-  for (let i = 0; i < 5; i++) {
-    const div = document.createElement("div");
-    div.className = "reel";
-    div.innerText = "❓";
-    slots.appendChild(div);
+
+  for (let r = 0; r < 3; r++) {
+    const row = document.createElement("div");
+    row.className = "row";
+
+    for (let c = 0; c < 5; c++) {
+      const reel = document.createElement("div");
+      reel.className = "reel";
+      reel.innerText = "❓";
+      row.appendChild(reel);
+    }
+
+    slots.appendChild(row);
   }
 }
 
 createReels();
 
+// 👤 LOGIN
 function register() {
   const username = document.getElementById("username").value;
+
+  if (!username) return alert("Enter username");
 
   fetch(`${API}/register?username=${username}`)
     .then(res => res.json())
     .then(data => {
+      if (!data || data.error) {
+        alert(data?.error || "Login failed");
+        return;
+      }
+
       userId = data.userId;
       document.getElementById("balance").innerText = data.balance;
-    });
+      document.getElementById("result").innerText = "Logged in!";
+    })
+    .catch(() => alert("Connection error"));
 }
 
+// 💰 BET
 function changeBet(bet) {
   betAmount = bet;
   document.getElementById("betDisplay").innerText = bet;
 }
 
+// 🎯 HIGHLIGHT WINS
+function highlightWins(winningLines) {
+  const reels = document.querySelectorAll(".reel");
+
+  const patterns = [
+    [0,0,0,0,0],
+    [1,1,1,1,1],
+    [2,2,2,2,2],
+    [0,1,2,1,0],
+    [2,1,0,1,2],
+    [0,1,0,1,0],
+    [2,1,2,1,2],
+    [1,0,1,2,1]
+  ];
+
+  winningLines.forEach(line => {
+    const pattern = patterns[line.lineIndex];
+
+    for (let c = 0; c < line.length; c++) {
+      const r = pattern[c];
+      const index = r * 5 + c;
+      reels[index].classList.add("win");
+    }
+  });
+}
+
+// 🎰 SPIN
 async function spin() {
   if (!userId) return alert("Login first");
 
   const reels = document.querySelectorAll(".reel");
   const result = document.getElementById("result");
 
-  const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑","🃏"];
+  // clear old highlights
+  reels.forEach(r => r.classList.remove("win"));
 
+  const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑","🃏"];
   const intervals = [];
 
-  reels.forEach((r, i) => {
-    intervals[i] = setInterval(() => {
-      r.innerText = symbols[Math.floor(Math.random()*symbols.length)];
+  // 🎰 START SPIN
+  for (let c = 0; c < 5; c++) {
+    intervals[c] = setInterval(() => {
+      for (let r = 0; r < 3; r++) {
+        const index = r * 5 + c;
+        reels[index].innerText =
+          symbols[Math.floor(Math.random() * symbols.length)];
+      }
     }, 100);
-  });
+  }
 
-  const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}`);
-  const data = await res.json();
+  let data;
 
-  reels.forEach((r, i) => {
+  try {
+    const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}`);
+    data = await res.json();
+
+    if (!data || data.error) {
+      result.innerText = data?.error || "Error";
+      return;
+    }
+
+  } catch (err) {
+    result.innerText = "Connection error";
+    return;
+  }
+
+  // 🛑 STOP REELS
+  for (let c = 0; c < 5; c++) {
     setTimeout(() => {
-      clearInterval(intervals[i]);
-      r.innerText = data.reels[i];
-    }, i * 300);
-  });
+      clearInterval(intervals[c]);
 
+      for (let r = 0; r < 3; r++) {
+        const index = r * 5 + c;
+        reels[index].innerText = data.reels[r][c];
+      }
+
+    }, c * 300);
+  }
+
+  // 🎯 FINAL RESULT
   setTimeout(() => {
-    result.innerText = data.win > 0 ? "WIN " + data.win : "Lose";
+    result.innerText = data.win > 0 ? "🎉 WIN " + data.win : "Lose";
     document.getElementById("balance").innerText = data.balance;
-  }, 1500);
+
+    if (data.winningLines) {
+      highlightWins(data.winningLines);
+    }
+
+  }, 1800);
 }
 </script>
 
