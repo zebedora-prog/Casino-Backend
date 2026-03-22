@@ -239,46 +239,92 @@ async function register() {
 }
 
 // 🎰 SPIN (FINAL SAFE VERSION)
-async function spin() {
-  if (!userId) {
-    alert("Login first");
-    return;
-  }
-
-  const result = document.getElementById("result");
-  const reels = document.querySelectorAll(".reel");
-
-  result.innerText = "Spinning...";
-  result.classList.remove("win");
-
-  const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑"];
-  const intervals = [];
-
-  // 🎲 Fake spin
-  reels.forEach((reel) => {
-    const interval = setInterval(() => {
-      reel.innerText = symbols[Math.floor(Math.random() * symbols.length)];
-    }, 100);
-    intervals.push(interval);
-  });
-
+app.get("/spin", async (req, res) => {
   try {
-    const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}&machine=${machine}`);
-    const data = await res.json();
+    const { userId, bet = 10, machine = "basic" } = req.query;
 
-    if (data.error) {
-      result.innerText = data.error;
-      reels.forEach((_, i) => clearInterval(intervals[i]));
-      return;
+    if (!userId) {
+      return res.status(400).json({ error: "Missing userId" });
     }
 
-    // 🛑 Stop reels one-by-one
-    reels.forEach((reel, i) => {
-      setTimeout(() => {
-        clearInterval(intervals[i]);
-        reel.innerText = data.reels[i] || "❌";
-      }, i * 300);
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const betAmount = parseInt(bet);
+
+    if (user.balance < betAmount) {
+      return res.json({ error: "Not enough balance" });
+    }
+
+    // 🎰 SYMBOLS (WITH WILD)
+    const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑","🃏"];
+
+    // 🎰 GENERATE REELS (change length for 3/5/7 reels)
+    const reels = Array.from({ length: 5 }, () =>
+      symbols[Math.floor(Math.random() * symbols.length)]
+    );
+
+    // =========================
+    // 💰 WIN LOGIC (THIS IS STEP 2)
+    // =========================
+    let win = 0;
+
+    function match(a, b) {
+      return a === b || a === "🃏" || b === "🃏";
+    }
+
+    let streak = 1;
+
+    for (let i = 1; i < reels.length; i++) {
+      if (match(reels[i], reels[i - 1])) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+
+    if (streak >= 3) win += betAmount * 2;
+    if (streak >= 4) win += betAmount * 5;
+    if (streak >= 5) win += betAmount * 10;
+
+    // 🎯 BONUS RANDOM PAYLINE
+    if (Math.random() > 0.7) {
+      win += betAmount * 2;
+    }
+
+    // =========================
+
+    // 💸 UPDATE BALANCE
+    user.balance -= betAmount;
+    user.balance += win;
+
+    // 🎯 XP SYSTEM
+    user.xp += betAmount;
+
+    const xpNeeded = user.level * 100;
+    if (user.xp >= xpNeeded) {
+      user.level += 1;
+      user.xp = 0;
+      user.balance += 500;
+    }
+
+    await user.save();
+
+    res.json({
+      reels,
+      win,
+      balance: user.balance,
+      xp: user.xp,
+      level: user.level
     });
+
+  } catch (err) {
+    console.error("SPIN ERROR:", err);
+    res.status(500).json({ error: "Spin failed" });
+  }
+});
 
     // 🎉 Result
     setTimeout(() => {
