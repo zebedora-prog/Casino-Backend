@@ -58,23 +58,32 @@
       box-shadow: 0 0 20px gold;
     }
 
-    .reels {
-      font-size: 60px;
-      margin: 20px 0;
-      background: rgba(0,0,0,0.6);
-      padding: 15px;
-      border-radius: 15px;
-    }
+   .reels {
+  display: flex;
+  justify-content: space-around;
+  font-size: 60px;
+  background: black;
+  padding: 20px;
+  border-radius: 15px;
+  border: 3px solid gold;
+  overflow: hidden;
+  height: 90px;
+}
 
-    .flash {
-      animation: flash 0.3s;
-    }
+.reel {
+  display: flex;
+  flex-direction: column;
+  animation: none;
+}
 
-    @keyframes flash {
-      0% { background: white; }
-      100% { background: transparent; }
-    }
+.spin {
+  animation: spinAnim 0.3s linear infinite;
+}
 
+@keyframes spinAnim {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-60px); }
+}
     .win-glow {
       text-shadow: 0 0 10px gold, 0 0 20px orange;
     }
