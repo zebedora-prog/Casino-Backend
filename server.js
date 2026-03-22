@@ -125,3 +125,20 @@ const symbols = selected.symbols;
     res.status(500).send("Error");
   }
 });
+app.get("/leaderboard", async (req, res) => {
+  try {
+    const topUsers = await User.find()
+      .sort({ balance: -1 }) // highest money first
+      .limit(10);
+
+    res.json(topUsers.map(user => ({
+      username: user.username,
+      balance: user.balance,
+      level: user.level
+    })));
+
+  } catch (err) {
+    console.error("LEADERBOARD ERROR:", err);
+    res.status(500).json({ error: "Failed to load leaderboard" });
+  }
+});
