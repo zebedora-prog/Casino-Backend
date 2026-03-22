@@ -3,142 +3,41 @@
 <head>
   <title>Casino Slots</title>
   <style>
-    body {
-      margin: 0;
-      font-family: Arial;
-      background: radial-gradient(circle, #1a1a1a, #000);
-      color: white;
-      text-align: center;
-    }
-
-    h1 {
-      color: gold;
-      margin-top: 20px;
-      text-shadow: 0 0 10px gold;
-    }
-
-    .container {
-      margin-top: 20px;
-    }
-
-    input, button, select {
-      padding: 10px;
-      margin: 5px;
-      border-radius: 8px;
-      border: none;
-      font-size: 16px;
-    }
-
-    button {
-      background: gold;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    button:hover {
-      background: orange;
-    }
-
-    .slots {
-      display: flex;
-      justify-content: center;
-      margin-top: 30px;
-      gap: 10px;
-    }
-
-    .reel {
-      width: 70px;
-      height: 70px;
-      font-size: 40px;
-      background: black;
-      border: 3px solid gold;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 10px gold;
-    }
-
-    #result {
-      margin-top: 20px;
-      font-size: 22px;
-    }
-
-    .win {
-      color: lime;
-      text-shadow: 0 0 10px lime;
-    }
-
-    #bigWin {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(255,215,0,0.9);
-      color: black;
-      font-size: 50px;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-      font-weight: bold;
-    }
+    body { background: black; color: white; text-align: center; font-family: Arial; }
+    .slots { display: flex; justify-content: center; gap: 10px; margin-top: 30px; }
+    .reel { width: 70px; height: 70px; font-size: 40px; border: 2px solid gold; display: flex; align-items: center; justify-content: center; }
+    button { padding: 10px; margin: 5px; }
+    .win { color: lime; }
   </style>
 </head>
-
 <body>
 
-<h1>🎰 Vegas Slots 🎰</h1>
+<h1>🎰 Slots 🎰</h1>
 
-<div class="container">
+<input id="username">
+<button onclick="register()">Login</button>
 
-  <input id="username" placeholder="Enter username">
-  <button onclick="register()">Login / Register</button>
+<p>Bet: <span id="betDisplay">10</span></p>
+<button onclick="changeBet(10)">10</button>
+<button onclick="changeBet(50)">50</button>
 
-  <br>
+<button onclick="spin()">SPIN</button>
 
-  <label>Machine:</label>
-  <select id="machine">
-    <option value="basic">Basic</option>
-    <option value="premium">Premium</option>
-  </select>
+<div class="slots" id="slots"></div>
 
-  <br>
-
-  <button onclick="changeBet(10)">Bet 10</button>
-  <button onclick="changeBet(50)">Bet 50</button>
-  <button onclick="changeBet(100)">Bet 100</button>
-
-  <p>Bet: <span id="betDisplay">10</span></p>
-
-  <button onclick="spin()">🎰 SPIN 🎰</button>
-
-  <div class="slots" id="slots"></div>
-
-  <div id="result"></div>
-
-  <p>Balance: <span id="balance">0</span></p>
-  <p>XP: <span id="xp">0</span> | Level: <span id="level">1</span></p>
-
-</div>
-
-<div id="bigWin">💰 BIG WIN 💰</div>
-
-<audio id="spinSound" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"></audio>
-<audio id="winSound" src="https://www.soundjay.com/misc/sounds/bell-ringing-01.mp3"></audio>
+<p id="result"></p>
+<p>Balance: <span id="balance"></span></p>
 
 <script>
 const API = "https://win-win-production.up.railway.app";
 
 let userId = null;
 let betAmount = 10;
-let reelCount = 5;
 
-function createReels(count) {
+function createReels() {
   const slots = document.getElementById("slots");
   slots.innerHTML = "";
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < 5; i++) {
     const div = document.createElement("div");
     div.className = "reel";
     div.innerText = "❓";
@@ -146,7 +45,7 @@ function createReels(count) {
   }
 }
 
-createReels(reelCount);
+createReels();
 
 function register() {
   const username = document.getElementById("username").value;
@@ -155,86 +54,45 @@ function register() {
     .then(res => res.json())
     .then(data => {
       userId = data.userId;
-      updateUI(data);
-      alert("Logged in!");
+      document.getElementById("balance").innerText = data.balance;
     });
 }
 
-function changeBet(amount) {
-  betAmount = amount;
-  document.getElementById("betDisplay").innerText = amount;
-}
-
-function updateUI(data) {
-  if (!data) return;
-  document.getElementById("balance").innerText = data.balance;
-  document.getElementById("xp").innerText = data.xp;
-  document.getElementById("level").innerText = data.level;
+function changeBet(bet) {
+  betAmount = bet;
+  document.getElementById("betDisplay").innerText = bet;
 }
 
 async function spin() {
   if (!userId) return alert("Login first");
 
-  const result = document.getElementById("result");
-  result.innerText = "Spinning...";
-  result.classList.remove("win");
-
   const reels = document.querySelectorAll(".reel");
+  const result = document.getElementById("result");
 
-  document.getElementById("spinSound").play();
-
-  // 🎰 FAKE SPIN
   const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑","🃏"];
 
-// ✅ THIS CREATES 5 REELS
-const reelCount = parseInt(req.query.reels) || 5;
+  const intervals = [];
 
-  const reels = Array.from({ length: 5 }, () =>
-  symbols[Math.floor(Math.random() * symbols.length)]
-);
+  reels.forEach((r, i) => {
+    intervals[i] = setInterval(() => {
+      r.innerText = symbols[Math.floor(Math.random()*symbols.length)];
+    }, 100);
+  });
 
-  const machine = document.getElementById("machine").value;
-
-  const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}&machine=${machine}`);
+  const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}`);
   const data = await res.json();
 
-  // 🛑 STOP REELS ONE BY ONE
-  reels.forEach((reel, i) => {
+  reels.forEach((r, i) => {
     setTimeout(() => {
       clearInterval(intervals[i]);
-      reel.innerText = data.reels[i];
+      r.innerText = data.reels[i];
     }, i * 300);
   });
 
-  // 🎉 RESULT
   setTimeout(() => {
-    if (data.win > 0) {
-      result.innerText = "🎉 WIN " + data.win;
-      result.classList.add("win");
-
-      document.getElementById("winSound").play();
-
-      if (data.win > 200) {
-        document.getElementById("bigWin").style.display = "flex";
-        setTimeout(() => {
-          document.getElementById("bigWin").style.display = "none";
-        }, 2000);
-      }
-
-      if (data.win > 500) {
-        document.body.style.background = "gold";
-        setTimeout(() => {
-          document.body.style.background = "";
-        }, 500);
-      }
-
-    } else {
-      result.innerText = "Try again";
-    }
-
-    updateUI(data);
-
-  }, reels.length * 300);
+    result.innerText = data.win > 0 ? "WIN " + data.win : "Lose";
+    document.getElementById("balance").innerText = data.balance;
+  }, 1500);
 }
 </script>
 
