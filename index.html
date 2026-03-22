@@ -76,24 +76,28 @@
       50% { box-shadow: 0 0 35px gold; }
     }
 
-    .reels {
-      display: flex;
-      justify-content: space-around;
-      font-size: 60px;
-      background: black;
-      padding: 20px;
-      border-radius: 15px;
-      border: 3px solid gold;
-      overflow: hidden;
-      height: 90px;
-      margin: 20px 0;
-    }
+   .reels {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  background: black;
+  padding: 15px;
+  border-radius: 10px;
+  border: 2px solid gold;
+  height: 100px;
+}
 
-    .reel {
-      display: flex;
-      flex-direction: column;
-    }
-
+.reel {
+  width: 50px;
+  height: 70px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 35px;
+  background: #111;
+  border-radius: 8px;
+  box-shadow: inset 0 0 10px black;
+}
     .spin {
       animation: spinAnim 0.2s linear infinite;
     }
@@ -223,28 +227,60 @@ async function register() {
 async function spin() {
   if (!userId) return alert("Login first");
 
+  const result = document.getElementById("result");
   result.innerText = "Spinning...";
   result.classList.remove("win");
 
-  r1.classList.add("spin");
-  r2.classList.add("spin");
-  r3.classList.add("spin");
+  const reels = document.querySelectorAll(".reel");
 
-  const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}&machine=basic`);
+  // 🎰 Start fake spinning (random symbols)
+  const spinIntervals = [];
+
+  reels.forEach((reel, i) => {
+    const interval = setInterval(() => {
+      const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑"];
+      reel.innerText = symbols[Math.floor(Math.random()*symbols.length)];
+    }, 100);
+
+    spinIntervals.push(interval);
+  });
+
+  // 🎯 Call backend
+  const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}&machine=${machine}`);
   const data = await res.json();
 
-  r1.classList.remove("spin");
-  r2.classList.remove("spin");
-  r3.classList.remove("spin");
+  // 🛑 STOP REELS ONE BY ONE (REAL SLOT FEEL)
+  reels.forEach((reel, i) => {
+    setTimeout(() => {
+      clearInterval(spinIntervals[i]);
+      reel.innerText = data.reels[i];
+    }, i * 300); // ⬅️ delay each reel
+  });
 
-  r1.innerText = data.reels[0];
-  r2.innerText = data.reels[1];
-  r3.innerText = data.reels[2];
+  // 🎉 Show result AFTER last reel stops
+  setTimeout(() => {
+    if (data.win > 0) {
+      result.innerText = "🎉 WIN " + data.win;
+      result.classList.add("win");
 
-  if (data.win > 0) {
-    result.innerText = "🎉 WIN " + data.win;
-    result.classList.add("win");
+      if (data.win > 200) {
+        bigWin.style.display = "flex";
+        setTimeout(()=> bigWin.style.display="none", 2000);
+      }
 
+      if (data.win > 500) {
+        document.body.style.background = "gold";
+        setTimeout(()=> document.body.style.background="", 500);
+      }
+
+    } else {
+      result.innerText = "Try again";
+    }
+
+    updateUI(data);
+
+  }, reels.length * 300);
+}
     // 💥 Big win
     if (data.win > 200) {
       bigWin.style.display = "flex";
