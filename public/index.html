@@ -66,11 +66,35 @@ let betAmount = 10;
 async function login() {
   const username = document.getElementById("username").value;
 
-  const res = await fetch(`${API}/register?username=${username}`);
-  const data = await res.json();
+  if (!username) {
+    alert("Enter username");
+    return;
+  }
 
-  userId = data.userId;
-  document.getElementById("balance").innerText = "Balance: " + data.balance;
+  try {
+    const res = await fetch(`${API}/register?username=${username}`);
+
+    const data = await res.json();
+
+    console.log("LOGIN DATA:", data);
+
+    if (!data || data.error) {
+      alert(data?.error || "Login failed");
+      return;
+    }
+
+    userId = data.userId;
+
+    document.getElementById("balance").innerText =
+      "Balance: " + data.balance;
+
+    document.getElementById("result").innerText =
+      "Logged in as " + username;
+
+  } catch (err) {
+    console.error("LOGIN ERROR:", err);
+    alert("Connection failed");
+  }
 }
 
 // SPIN (STABLE VERSION)
