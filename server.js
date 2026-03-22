@@ -86,8 +86,6 @@ app.get("/spin", async (req, res) => {
   try {
     const { userId, bet, machine } = req.query;
 
-    console.log("SPIN INPUT:", req.query); // 👈 debug
-
     if (!userId) {
       return res.json({ error: "userId required" });
     }
@@ -100,6 +98,11 @@ app.get("/spin", async (req, res) => {
       return res.json({ error: "Invalid userId" });
     }
 
+    // ✅ SAFE DEFAULTS (THIS FIXES YOUR CRASH)
+    if (user.balance === undefined) user.balance = 1000;
+    if (user.xp === undefined) user.xp = 0;
+    if (user.level === undefined) user.level = 1;
+
     if (betAmount > user.balance) {
       return res.json({
         error: "Not enough balance",
@@ -108,11 +111,6 @@ app.get("/spin", async (req, res) => {
     }
 
     const selected = machines[machine] || machines.basic;
-
-    if (!selected) {
-      return res.json({ error: "Invalid machine" });
-    }
-
     const symbols = selected.symbols;
 
     user.balance -= betAmount;
@@ -130,10 +128,7 @@ app.get("/spin", async (req, res) => {
     const win = betAmount * multiplier;
     user.balance += win;
 
-    // XP
-    user.xp = user.xp || 0;
-    user.level = user.level || 1;
-
+    // 🎯 XP SYSTEM (SAFE)
     user.xp += betAmount;
 
     const xpNeeded = user.level * 100;
@@ -155,8 +150,8 @@ app.get("/spin", async (req, res) => {
     });
 
   } catch (err) {
-    console.error("🔥 REAL SPIN ERROR:", err); // 👈 THIS IS KEY
-    res.status(500).json({ error: err.message }); // 👈 show real error
+    console.error("SPIN ERROR:", err);
+    res.status(500).json({ error: err.message });
   }
 });
     // 🎯 XP SYSTEM
