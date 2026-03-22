@@ -123,11 +123,10 @@ async function spin() {
 
   let grid = [];
 
-  // BUILD GRID UI
+  // BUILD UI
   for (let r = 0; r < rows; r++) {
     const rowDiv = document.createElement("div");
     rowDiv.className = "row";
-
     grid[r] = [];
 
     for (let c = 0; c < cols; c++) {
@@ -142,56 +141,64 @@ async function spin() {
     slots.appendChild(rowDiv);
   }
 
-  // 🎰 START SPIN FIRST (IMPORTANT FIX)
   const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑","🃏"];
   const intervals = [];
+  let stopped = new Array(cols).fill(false);
+  let data = null;
 
+  // 🎰 START SPINNING
   for (let c = 0; c < cols; c++) {
     intervals[c] = setInterval(() => {
       for (let r = 0; r < rows; r++) {
         grid[r][c].innerText =
           symbols[Math.floor(Math.random() * symbols.length)];
-
-        grid[r][c].style.transform = "scale(1.1)";
-        setTimeout(() => {
-          grid[r][c].style.transform = "scale(1)";
-        }, 50);
       }
     }, 100);
   }
 
-  // FETCH DATA (AFTER SPIN STARTS)
-  let data;
-  try {
-    const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}`);
-    data = await res.json();
-  } catch (err) {
-    console.error(err);
-    return;
-  }
+  // 📡 FETCH RESULT (ASYNC, DOES NOT BLOCK)
+  fetch(`${API}/spin?userId=${userId}&bet=${betAmount}`)
+    .then(res => res.json())
+    .then(resData => {
+      console.log("DATA:", resData);
+      data = resData;
+    })
+    .catch(err => {
+      console.error("Fetch error:", err);
+    });
 
-  if (!data || data.error) {
-    alert(data?.error || "Spin failed");
-    return;
-  }
-
-  console.log("REELS:", data.reels);
-console.log("DATA RECEIVED:", data);
-  // STOP REELS ONE BY ONE
+  // 🛑 STOP REELS ONE BY ONE (ALWAYS RUNS)
   for (let c = 0; c < cols; c++) {
     setTimeout(() => {
-      clearInterval(intervals[c]); // ALWAYS stop first
+      clearInterval(intervals[c]);
+      stopped[c] = true;
 
-     clearInterval(intervals[c]); // ALWAYS stop first
-// 🚨 emergency stop (in case something breaks)
-setTimeout(() => {
-  intervals.forEach(i => clearInterval(i));
-}, 3000);
-    }, 700 + c * 300);
+      // if data ready → show real result
+      if (data && data.reels) {
+        for (let r = 0; r < rows; r++) {
+          grid[r][c].innerText = data.reels[r][c];
+        }
+      }
+
+    }, 800 + c * 300);
   }
 
-  // RESULT + PAYLINES
+  // 🎯 FINALIZE AFTER ALL STOP
   setTimeout(() => {
+    // if data arrived late, force final render
+    if (data && data.reels) {
+      for (let c = 0; c < cols; c++) {
+        for (let r = 0; r < rows; r++) {
+          grid[r][c].innerText = data.reels[r][c];
+        }
+      }
+    }
+
+    if (!data) {
+      document.getElementById("result").innerText = "Error";
+      return;
+    }
+
     document.getElementById("result").innerText =
       data.win > 0 ? "🎉 WIN " + data.win : "Try again";
 
@@ -203,70 +210,7 @@ setTimeout(() => {
       checkPaylines(grid, data.winningLines);
     }
 
-  }, 700 + cols * 300);
-}
-
-// DRAW LINE
-function drawAccurateLine(cells) {
-  const el = document.getElementById("activeLine");
-  const wrapper = document.getElementById("slotWrapper");
-
-  const first = cells[0].getBoundingClientRect();
-  const last = cells[cells.length - 1].getBoundingClientRect();
-  const parent = wrapper.getBoundingClientRect();
-
-  const x1 = first.left + first.width / 2 - parent.left;
-  const y1 = first.top + first.height / 2 - parent.top;
-
-  const x2 = last.left + last.width / 2 - parent.left;
-  const y2 = last.top + last.height / 2 - parent.top;
-
-  const length = Math.hypot(x2 - x1, y2 - y1);
-  const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
-
-  el.style.display = "block";
-  el.style.width = length + "px";
-  el.style.left = x1 + "px";
-  el.style.top = y1 + "px";
-  el.style.transform = `rotate(${angle}deg)`;
-  el.style.transformOrigin = "0 0";
-
-  return el;
-}
-
-// PAYLINES
-function checkPaylines(grid, winningLines) {
-  const patterns = [
-    [0,0,0,0,0],
-    [1,1,1,1,1],
-    [2,2,2,2,2],
-    [0,1,2,1,0],
-    [2,1,0,1,2],
-    [0,1,0,1,0],
-    [2,1,2,1,2],
-    [1,0,1,2,1]
-  ];
-
-  winningLines.forEach(winLine => {
-    const pattern = patterns[winLine.lineIndex];
-    const cells = [];
-
-    for (let c = 0; c < winLine.length; c++) {
-      cells.push(grid[pattern[c]][c]);
-    }
-
-    const el = drawAccurateLine(cells);
-
-    cells.forEach(cell => cell.classList.add("win-symbol"));
-
-    setTimeout(() => {
-      el.style.display = "none";
-      el.style.transform = "none";
-      el.style.width = "0px";
-
-      cells.forEach(cell => cell.classList.remove("win-symbol"));
-    }, 1500);
-  });
+  }, 800 + cols * 300 + 200);
 }
 </script>
 
