@@ -32,7 +32,8 @@
   <button onclick="daily()">Daily</button>
 
   <script>
-   const spinSound = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+let betAmount = 50;
+    const spinSound = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
 const winSound = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
     
     let userId = "";
@@ -75,7 +76,7 @@ spinSound.play().catch(err => console.log("Sound blocked:", err));
       }, 100);
 
       try {
-        const res = await fetch(`${API}/spin?userId=${userId}&bet=50&machine=basic`);
+        const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}&machine=basic`)
         const data = await res.json();
 
         clearInterval(interval);
@@ -142,6 +143,7 @@ setTimeout(() => {
 let betAmount = 50;
 
 function setBet(amount) {
+  console.log("BET CLICKED:", amount);
   betAmount = amount;
   document.getElementById("betDisplay").innerText = "Current Bet: " + betAmount;
 }
