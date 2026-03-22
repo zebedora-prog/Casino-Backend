@@ -1,67 +1,96 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <style>
-/* 🎰 SLOT WRAPPER */
-#slotWrapper {
-  position: relative;
-  width: fit-content;
-  margin: auto;
-}
-
-/* 🎯 PAYLINE */
-#payline {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 90%;
-  height: 4px;
-  background: red;
-  transform: translate(-50%, -50%);
-  display: none;
-  box-shadow: 0 0 10px red, 0 0 20px red;
-  z-index: 10;
-}
-
-/* ✨ WIN GLOW */
-.win-symbol {
-  animation: glow 0.5s infinite alternate;
-}
-
-@keyframes glow {
-  from { box-shadow: 0 0 5px gold; }
-  to { box-shadow: 0 0 20px gold; }
-}
-</style>
   <title>Casino Slots</title>
+
   <style>
-    body { background: black; color: white; text-align: center; font-family: Arial; }
-    .slots { display: flex; justify-content: center; gap: 10px; margin-top: 30px; }
-    .reel { width: 70px; height: 70px; font-size: 40px; border: 2px solid gold; display: flex; align-items: center; justify-content: center; }
-    button { padding: 10px; margin: 5px; }
-    .win { color: lime; }
+    body {
+      background: #111;
+      color: white;
+      text-align: center;
+      font-family: Arial;
+    }
+
+    #slotWrapper {
+      position: relative;
+      margin: 30px auto;
+      width: fit-content;
+    }
+
+    .slots {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .row {
+      display: flex;
+      gap: 5px;
+    }
+
+    .reel {
+      width: 60px;
+      height: 60px;
+      background: black;
+      border-radius: 10px;
+      font-size: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .payline {
+      position: absolute;
+      height: 4px;
+      width: 90%;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      z-index: 10;
+      box-shadow: 0 0 10px red, 0 0 20px red;
+    }
+
+    #line-top { top: 20%; background: red; }
+    #line-mid { top: 50%; background: yellow; }
+    #line-bot { top: 80%; background: cyan; }
+
+    .win-symbol {
+      animation: glow 0.5s infinite alternate;
+    }
+
+    @keyframes glow {
+      from { box-shadow: 0 0 5px gold; }
+      to { box-shadow: 0 0 20px gold; }
+    }
+
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 16px;
+    }
   </style>
 </head>
+
 <body>
 
-<h1>🎰 Slots 🎰</h1>
+<h1>🎰 Casino Slots</h1>
 
-<input id="username">
+<input id="username" placeholder="username">
 <button onclick="register()">Login</button>
 
-<p>Bet: <span id="betDisplay">10</span></p>
-<button onclick="changeBet(10)">10</button>
-<button onclick="changeBet(50)">50</button>
+<br><br>
 
 <button onclick="spin()">SPIN</button>
 
+<div id="result"></div>
+
 <div id="slotWrapper">
-  <div id="payline"></div>
+  <div id="line-top" class="payline"></div>
+  <div id="line-mid" class="payline"></div>
+  <div id="line-bot" class="payline"></div>
+
   <div class="slots" id="slots"></div>
 </div>
-
-<p id="result"></p>
-<p>Balance: <span id="balance"></span></p>
 
 <script>
 const API = "https://win-win-production.up.railway.app";
@@ -69,58 +98,98 @@ const API = "https://win-win-production.up.railway.app";
 let userId = null;
 let betAmount = 10;
 
-function createReels() {
-  const slots = document.getElementById("slots");
-  slots.innerHTML = "";
-  for (let i = 0; i < 5; i++) {
-    const div = document.createElement("div");
-    div.className = "reel";
-    div.innerText = "❓";
-    slots.appendChild(div);
-  }
-}
-
-createReels();
-
-function register() {
+async function register() {
   const username = document.getElementById("username").value;
 
-  fetch(`${API}/register?username=${username}`)
-    .then(res => res.json())
-    .then(data => {
-      userId = data.userId;
-      document.getElementById("balance").innerText = data.balance;
-    });
+  const res = await fetch(`${API}/register?username=${username}`);
+  const data = await res.json();
+
+  userId = data.userId;
+
+  alert("Logged in!");
 }
 
-function changeBet(bet) {
-  betAmount = bet;
-  document.getElementById("betDisplay").innerText = bet;
-}
+async function spin() {
+  if (!userId) return alert("Login first");
 
-async function spin()
-const result = document.getElementById("result");
+  const result = document.getElementById("result");
 
+  // 🎰 BUILD GRID
+  const rows = 3;
+  const cols = 5;
+
+  const slots = document.getElementById("slots");
+  slots.innerHTML = "";
+
+  let grid = [];
+
+  for (let r = 0; r < rows; r++) {
+    const rowDiv = document.createElement("div");
+    rowDiv.className = "row";
+
+    grid[r] = [];
+
+    for (let c = 0; c < cols; c++) {
+      const reel = document.createElement("div");
+      reel.className = "reel";
+      reel.innerText = "❓";
+
+      grid[r][c] = reel;
+      rowDiv.appendChild(reel);
+    }
+
+    slots.appendChild(rowDiv);
+  }
+
+  // 🎯 FETCH RESULT
   const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}`);
   const data = await res.json();
- for (let c = 0; c < data.reels.length; c++) {
+
+  // 🎰 FILL GRID
+  for (let c = 0; c < data.reels.length; c++) {
     for (let r = 0; r < grid.length; r++) {
       grid[r][c].innerText = data.reels[c];
     }
   }
-  reels.forEach((r, i) => {
-    setTimeout(() => { checkPaylines(grid, data);
 
-}, reels.length * 300);
-      clearInterval(intervals[i]);
-      r.innerText = data.reels[i];
-    }, i * 300);
+  // 🎉 RESULT
+  if (data.win > 0) {
+    result.innerText = "🎉 WIN " + data.win;
+  } else {
+    result.innerText = "Try again";
+  }
+
+  // 🎯 PAYLINES
+  checkPaylines(grid, data);
+}
+
+function checkPaylines(grid, data) {
+  const paylines = [
+    { row: 0, id: "line-top" },
+    { row: 1, id: "line-mid" },
+    { row: 2, id: "line-bot" }
+  ];
+
+  paylines.forEach(line => {
+    const symbols = grid[line.row].map(c => c.innerText);
+
+    let match = symbols.every(s => s === symbols[0] || s === "🃏");
+
+    if (match && data.win > 0) {
+      document.getElementById(line.id).style.display = "block";
+
+      grid[line.row].forEach(cell =>
+        cell.classList.add("win-symbol")
+      );
+
+      setTimeout(() => {
+        document.getElementById(line.id).style.display = "none";
+        grid[line.row].forEach(cell =>
+          cell.classList.remove("win-symbol")
+        );
+      }, 1500);
+    }
   });
-
-  setTimeout(() => {
-    result.innerText = data.win > 0 ? "WIN " + data.win : "Lose";
-    document.getElementById("balance").innerText = data.balance;
-  }, 1500);
 }
 </script>
 
