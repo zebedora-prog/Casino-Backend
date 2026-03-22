@@ -7,7 +7,9 @@ app.use(express.json());
 // 👤 User Schema
 const User = mongoose.model("User", {
   username: String,
-  balance: Number
+  balance: Number,
+  xp: Number,
+  level: Number
 });
 
 // 🎰 Slot Machines
@@ -39,7 +41,7 @@ mongoose.connect(process.env.MONGO_URI, {
   console.error(err);
 });
 
-// 🏠 Home route
+// 🏠 Home
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
@@ -58,7 +60,9 @@ app.get("/register", async (req, res) => {
     if (!user) {
       user = new User({
         username,
-        balance: 1000
+        balance: 1000,
+        xp: 0,
+        level: 1
       });
       await user.save();
     }
@@ -66,7 +70,9 @@ app.get("/register", async (req, res) => {
     res.json({
       message: "User ready",
       userId: user._id,
-      balance: user.balance
+      balance: user.balance,
+      xp: user.xp,
+      level: user.level
     });
 
   } catch (err) {
@@ -75,7 +81,7 @@ app.get("/register", async (req, res) => {
   }
 });
 
-// 🎰 Spin route
+// 🎰 Spin
 app.get("/spin", async (req, res) => {
   try {
     const { userId, bet, machine } = req.query;
@@ -105,7 +111,7 @@ app.get("/spin", async (req, res) => {
     // Deduct bet
     user.balance -= betAmount;
 
-    // Spin reels
+    // Spin
     const reel1 = symbols[Math.floor(Math.random() * symbols.length)];
     const reel2 = symbols[Math.floor(Math.random() * symbols.length)];
     const reel3 = symbols[Math.floor(Math.random() * symbols.length)];
@@ -119,6 +125,18 @@ app.get("/spin", async (req, res) => {
     const win = betAmount * multiplier;
     user.balance += win;
 
+    // 🎯 XP SYSTEM
+    const xpGain = betAmount;
+    user.xp += xpGain;
+
+    const xpNeeded = user.level * 100;
+
+    if (user.xp >= xpNeeded) {
+      user.level += 1;
+      user.xp = 0;
+      user.balance += 500; // level reward
+    }
+
     await user.save();
 
     res.json({
@@ -126,7 +144,9 @@ app.get("/spin", async (req, res) => {
       reels: [reel1, reel2, reel3],
       bet: betAmount,
       win,
-      balance: user.balance
+      balance: user.balance,
+      xp: user.xp,
+      level: user.level
     });
 
   } catch (err) {
