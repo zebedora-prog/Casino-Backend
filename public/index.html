@@ -1,1 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Casino Slots</title>
+  <style>
+    body { background: black; color: white; text-align: center; font-family: Arial; }
+    .slots { display: flex; justify-content: center; gap: 10px; margin-top: 30px; }
+    .reel { width: 70px; height: 70px; font-size: 40px; border: 2px solid gold; display: flex; align-items: center; justify-content: center; }
+    button { padding: 10px; margin: 5px; }
+    .win { color: lime; }
+  </style>
+</head>
+<body>
 
+<h1>🎰 Slots 🎰</h1>
+
+<input id="username">
+<button onclick="register()">Login</button>
+
+<p>Bet: <span id="betDisplay">10</span></p>
+<button onclick="changeBet(10)">10</button>
+<button onclick="changeBet(50)">50</button>
+
+<button onclick="spin()">SPIN</button>
+
+<div class="slots" id="slots"></div>
+
+<p id="result"></p>
+<p>Balance: <span id="balance"></span></p>
+
+<script>
+const API = "https://win-win-production.up.railway.app";
+
+let userId = null;
+let betAmount = 10;
+
+function createReels() {
+  const slots = document.getElementById("slots");
+  slots.innerHTML = "";
+  for (let i = 0; i < 5; i++) {
+    const div = document.createElement("div");
+    div.className = "reel";
+    div.innerText = "❓";
+    slots.appendChild(div);
+  }
+}
+
+createReels();
+
+function register() {
+  const username = document.getElementById("username").value;
+
+  fetch(`${API}/register?username=${username}`)
+    .then(res => res.json())
+    .then(data => {
+      userId = data.userId;
+      document.getElementById("balance").innerText = data.balance;
+    });
+}
+
+function changeBet(bet) {
+  betAmount = bet;
+  document.getElementById("betDisplay").innerText = bet;
+}
+
+async function spin() {
+  if (!userId) return alert("Login first");
+
+  const reels = document.querySelectorAll(".reel");
+  const result = document.getElementById("result");
+
+  const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑","🃏"];
+
+  const intervals = [];
+
+  reels.forEach((r, i) => {
+    intervals[i] = setInterval(() => {
+      r.innerText = symbols[Math.floor(Math.random()*symbols.length)];
+    }, 100);
+  });
+
+  const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}`);
+  const data = await res.json();
+
+  reels.forEach((r, i) => {
+    setTimeout(() => {
+      clearInterval(intervals[i]);
+      r.innerText = data.reels[i];
+    }, i * 300);
+  });
+
+  setTimeout(() => {
+    result.innerText = data.win > 0 ? "WIN " + data.win : "Lose";
+    document.getElementById("balance").innerText = data.balance;
+  }, 1500);
+}
+</script>
+
+</body>
+</html>
