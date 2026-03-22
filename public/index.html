@@ -192,16 +192,21 @@ async function spin() {
 
 // 🎯 accurate win detection (LEFT → RIGHT)
 function getWinningCells(cells) {
-  let first = cells[0].innerText;
-  let winning = [cells[0]];
+  let base = null;
+  let winning = [];
 
-  for (let i = 1; i < cells.length; i++) {
-    let current = cells[i].innerText;
+  for (let i = 0; i < cells.length; i++) {
+    let symbol = cells[i].innerText;
+
+    // set base symbol (first non-wild)
+    if (!base && symbol !== "🃏") {
+      base = symbol;
+    }
 
     if (
-      current === first ||
-      current === "🃏" ||
-      first === "🃏"
+      symbol === base ||
+      symbol === "🃏" ||
+      base === null // still only wilds
     ) {
       winning.push(cells[i]);
     } else {
