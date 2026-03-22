@@ -2,111 +2,133 @@ const express = require("express");
 const mongoose = require("mongoose");
 
 const app = express();
-
 app.use(express.json());
-app.use(express.static(__dirname));
 
+// 👤 User Schema
 const User = mongoose.model("User", {
   username: String,
   balance: Number,
   xp: Number,
-  level: Number,
-  lastClaim: Date
+  level: Number
 });
 
-// Machines
-const machines = {
-  basic: {
-    symbols: ["🍒", "🍋", "🔔"],
-    payouts: { "🍒": 2, "🍋": 3, "🔔": 5 }
-  },
-  premium: {
-    symbols: ["💎", "7️⃣", "👑"],
-    payouts: { "💎": 10, "7️⃣": 25, "👑": 100 }
-  }
-};
-
-// Connect DB
-mongoose.connect(process.env.MONGO_URI)
+// 🔗 MongoDB
+mongoose.connect(process.env.MONGO_URI, {
+  serverSelectionTimeoutMS: 5000
+})
 .then(() => {
-  console.log("MongoDB connected");
+  console.log("✅ MongoDB connected");
 
-  app.listen(process.env.PORT || 8080, () => {
-    console.log("Server running");
+  app.listen(process.env.PORT || 3000, "0.0.0.0", () => {
+    console.log("🚀 Server running");
   });
 })
-.catch(err => console.log(err));
+.catch(err => {
+  console.error("❌ MongoDB error:", err);
+});
 
-// Home
+// 🏠 Home
 app.get("/", (req, res) => {
-  res.send("Backend is running");
+  res.send("Backend is running 🚀");
 });
 
-// Register
+// 👤 Register/Login
 app.get("/register", async (req, res) => {
-  const { username } = req.query;
-
-  if (!username) {
-    return res.json({ error: "Username required" });
-  }
-
-  let user = await User.findOne({ username });
-
-  if (!user) {
-    user = new User({
-      username,
-      balance: 1000,
-      xp: 0,
-      level: 1
-    });
-    await user.save();
-  }
-
-  res.json({
-    userId: user._id,
-    balance: user.balance,
-    xp: user.xp,
-    level: user.level
-  });
-});
-
-// Spin
-app.get("/spin", async (req, res) => {
   try {
-    const user = await User.findById(req.query.userId);
+    const { username } = req.query;
 
-    if (!user) {
-      return res.json({ error: "Invalid user" });
+    if (!username) {
+      return res.json({ error: "Username required" });
     }
 
-    const bet = parseInt(req.query.bet) || 10;
+    let user = await User.findOne({ username });
 
-    if (bet > user.balance) {
+    if (!user) {
+      user = new User({
+        username,
+        balance: 1000,
+        xp: 0,
+        level: 1
+      });
+      await user.save();
+    }
+
+    res.json({
+      userId: user._id,
+      balance: user.balance,
+      xp: user.xp,
+      level: user.level
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Register failed" });
+  }
+});
+
+// 🎰 SPIN (FULL FIXED)
+app.get("/spin", async (req, res) => {
+  try {
+    const { userId, bet = 10 } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({ error: "Missing userId" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const betAmount = parseInt(bet);
+
+    if (user.balance < betAmount) {
       return res.json({ error: "Not enough balance" });
     }
 
-    const selected = machines[req.query.machine] || machines.basic;
-const symbols = selected.symbols;
-    
-    user.balance -= bet;
+    // 🎰 SYMBOLS
+    const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑","🃏"];
 
-    const r1 = symbols[Math.floor(Math.random() * 3)];
-    const r2 = symbols[Math.floor(Math.random() * 3)];
-    const r3 = symbols[Math.floor(Math.random() * 3)];
+    // ✅ ALWAYS 5 REELS
+    const reels = Array.from({ length: 5 }, () =>
+      symbols[Math.floor(Math.random() * symbols.length)]
+    );
 
+    // 🎯 WIN LOGIC
     let win = 0;
 
-    if (r1 === r2 && r2 === r3) {
-  win = bet * (selected.payouts[r1] || 5);
-}
+    function match(a, b) {
+      return a === b || a === "🃏" || b === "🃏";
+    }
 
-    // XP system
-    user.xp = user.xp || 0;
-    user.level = user.level || 1;
+    let streak = 1;
 
-    user.xp += bet;
+    for (let i = 1; i < reels.length; i++) {
+      if (match(reels[i], reels[i - 1])) {
+        streak++;
+      } else {
+        break;
+      }
+    }
 
-    if (user.xp >= user.level * 100) {
+    if (streak >= 3) win += betAmount * 2;
+    if (streak >= 4) win += betAmount * 5;
+    if (streak >= 5) win += betAmount * 10;
+
+    // 🎯 RANDOM BONUS
+    if (Math.random() > 0.7) {
+      win += betAmount * 2;
+    }
+
+    // 💸 UPDATE
+    user.balance -= betAmount;
+    user.balance += win;
+
+    // 🎯 XP
+    user.xp += betAmount;
+
+    const xpNeeded = user.level * 100;
+    if (user.xp >= xpNeeded) {
       user.level += 1;
       user.xp = 0;
       user.balance += 500;
@@ -115,7 +137,7 @@ const symbols = selected.symbols;
     await user.save();
 
     res.json({
-      reels: [r1, r2, r3],
+      reels,
       win,
       balance: user.balance,
       xp: user.xp,
@@ -123,70 +145,7 @@ const symbols = selected.symbols;
     });
 
   } catch (err) {
-    console.log(err);
-    res.status(500).send("Error");
-  }
-});
-app.get("/leaderboard", async (req, res) => {
-  try {
-    const topUsers = await User.find()
-      .sort({ balance: -1 }) // highest money first
-      .limit(10);
-
-    res.json(topUsers.map(user => ({
-      username: user.username,
-      balance: user.balance,
-      level: user.level
-    })));
-
-  } catch (err) {
-    console.error("LEADERBOARD ERROR:", err);
-    res.status(500).json({ error: "Failed to load leaderboard" });
-  }
-});
-app.get("/daily", async (req, res) => {
-  try {
-    const { userId } = req.query;
-
-    if (!userId) {
-      return res.json({ error: "userId required" });
-    }
-
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.json({ error: "Invalid user" });
-    }
-
-    const now = new Date();
-
-    if (user.lastClaim) {
-      const diff = now - new Date(user.lastClaim);
-      const hours = diff / (1000 * 60 * 60);
-
-      if (hours < 24) {
-        return res.json({
-          error: "Already claimed",
-          hoursLeft: Math.ceil(24 - hours)
-        });
-      }
-    }
-
-    // Reward
-    const reward = 500;
-    user.balance += reward;
-    user.lastClaim = now;
-
-    await user.save();
-
-    res.json({
-      message: "Daily reward claimed",
-      reward,
-      balance: user.balance
-    });
-
-  } catch (err) {
-    console.error("DAILY ERROR:", err);
-    res.status(500).json({ error: "Daily failed" });
+    console.error("SPIN ERROR:", err);
+    res.status(500).json({ error: "Spin failed" });
   }
 });
