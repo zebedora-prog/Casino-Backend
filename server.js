@@ -9,7 +9,8 @@ const User = mongoose.model("User", {
   username: String,
   balance: Number,
   xp: Number,
-  level: Number
+  level: Number,
+  lastClaim: Date
 });
 
 // Machines
@@ -140,5 +141,51 @@ app.get("/leaderboard", async (req, res) => {
   } catch (err) {
     console.error("LEADERBOARD ERROR:", err);
     res.status(500).json({ error: "Failed to load leaderboard" });
+  }
+});
+app.get("/daily", async (req, res) => {
+  try {
+    const { userId } = req.query;
+
+    if (!userId) {
+      return res.json({ error: "userId required" });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.json({ error: "Invalid user" });
+    }
+
+    const now = new Date();
+
+    if (user.lastClaim) {
+      const diff = now - new Date(user.lastClaim);
+      const hours = diff / (1000 * 60 * 60);
+
+      if (hours < 24) {
+        return res.json({
+          error: "Already claimed",
+          hoursLeft: Math.ceil(24 - hours)
+        });
+      }
+    }
+
+    // Reward
+    const reward = 500;
+    user.balance += reward;
+    user.lastClaim = now;
+
+    await user.save();
+
+    res.json({
+      message: "Daily reward claimed",
+      reward,
+      balance: user.balance
+    });
+
+  } catch (err) {
+    console.error("DAILY ERROR:", err);
+    res.status(500).json({ error: "Daily failed" });
   }
 });
