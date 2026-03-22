@@ -1,9 +1,13 @@
 const express = require("express");
 const mongoose = require("mongoose");
 
-const app = express();
-app.use(express.json());
+const const path = require("path");
+
 app.use(express.static("public"));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 // 👤 User Schema
 const User = mongoose.model("User", {
   username: String,
