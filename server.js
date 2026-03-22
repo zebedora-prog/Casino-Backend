@@ -1,8 +1,12 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const path = require("path");
 
 const app = express();
 app.use(express.json());
+
+// ✅ SERVE FRONTEND
+app.use(express.static(path.join(__dirname, "public")));
 
 // 👤 User Schema
 const User = mongoose.model("User", {
@@ -27,10 +31,8 @@ mongoose.connect(process.env.MONGO_URI, {
   console.error("❌ MongoDB error:", err);
 });
 
-// 🏠 Home
-app.get("/", (req, res) => {
-  res.send("Backend is running 🚀");
-});
+// ❌ REMOVE OLD "/" ROUTE
+// (do NOT add app.get("/") anymore)
 
 // 👤 Register/Login
 app.get("/register", async (req, res) => {
@@ -66,7 +68,7 @@ app.get("/register", async (req, res) => {
   }
 });
 
-// 🎰 SPIN (FULL FIXED)
+// 🎰 SPIN
 app.get("/spin", async (req, res) => {
   try {
     const { userId, bet = 10 } = req.query;
@@ -86,15 +88,12 @@ app.get("/spin", async (req, res) => {
       return res.json({ error: "Not enough balance" });
     }
 
-    // 🎰 SYMBOLS
     const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑","🃏"];
 
-    // ✅ ALWAYS 5 REELS
     const reels = Array.from({ length: 5 }, () =>
       symbols[Math.floor(Math.random() * symbols.length)]
     );
 
-    // 🎯 WIN LOGIC
     let win = 0;
 
     function match(a, b) {
@@ -115,16 +114,13 @@ app.get("/spin", async (req, res) => {
     if (streak >= 4) win += betAmount * 5;
     if (streak >= 5) win += betAmount * 10;
 
-    // 🎯 RANDOM BONUS
     if (Math.random() > 0.7) {
       win += betAmount * 2;
     }
 
-    // 💸 UPDATE
     user.balance -= betAmount;
     user.balance += win;
 
-    // 🎯 XP
     user.xp += betAmount;
 
     const xpNeeded = user.level * 100;
