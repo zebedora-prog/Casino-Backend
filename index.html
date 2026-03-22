@@ -2,164 +2,230 @@
 <html>
 <head>
   <title>Casino Game</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .app {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      padding: 25px;
+      border-radius: 20px;
+      width: 320px;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    input {
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      width: 70%;
+      margin-bottom: 10px;
+    }
+
+    button {
+      padding: 10px 15px;
+      margin: 5px;
+      border: none;
+      border-radius: 10px;
+      background: #3b82f6;
+      color: white;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #2563eb;
+      transform: scale(1.05);
+    }
+
+    .balance {
+      margin: 10px 0;
+      font-size: 18px;
+    }
+
+    .reels {
+      font-size: 60px;
+      margin: 20px 0;
+      letter-spacing: 10px;
+    }
+
+    .bet-buttons button {
+      background: #10b981;
+    }
+
+    .bet-buttons button:hover {
+      background: #059669;
+    }
+
+    .spin-btn {
+      background: #f59e0b;
+      font-size: 18px;
+      width: 100%;
+    }
+
+    .spin-btn:hover {
+      background: #d97706;
+    }
+
+    .result {
+      margin-top: 10px;
+      font-size: 18px;
+      min-height: 24px;
+    }
+  </style>
 </head>
 
-<body style="text-align:center; font-family:sans-serif; background:black; color:white;">
+<body>
 
-  <h1>🎰 Casino Game</h1>
+<div class="app">
 
-  <!-- 👤 LOGIN -->
-  <input id="username" placeholder="Enter username">
+  <h1>🎰 Casino</h1>
+
+  <!-- LOGIN -->
+  <input id="username" placeholder="Username">
+  <br>
   <button onclick="register()">Login</button>
 
-  <h2 id="balance">Balance: 0</h2>
-  <h3 id="level">Level: 1</h3>
+  <!-- BALANCE -->
+  <div class="balance" id="balance">💰 Balance: 0</div>
+  <div id="level">⭐ Level: 1</div>
 
-  <!-- 💰 BET SYSTEM -->
-  <div style="margin:20px;">
-    <button onclick="setBet(10)">Bet 10</button>
-    <button onclick="setBet(50)">Bet 50</button>
-    <button onclick="setBet(100)">Bet 100</button>
+  <!-- BET -->
+  <div class="bet-buttons">
+    <button onclick="setBet(10)">10</button>
+    <button onclick="setBet(50)">50</button>
+    <button onclick="setBet(100)">100</button>
   </div>
 
-  <h3 id="betDisplay">Current Bet: 50</h3>
+  <div id="betDisplay">Bet: 50</div>
 
-  <!-- 🎡 REELS -->
-  <div style="font-size:60px; margin:20px;">
+  <!-- REELS -->
+  <div class="reels">
     <span id="r1">🎰</span>
     <span id="r2">🎰</span>
     <span id="r3">🎰</span>
   </div>
 
-  <h2 id="result"></h2>
+  <!-- RESULT -->
+  <div class="result" id="result"></div>
 
-  <!-- 🎮 ACTIONS -->
-  <button onclick="spin()">SPIN</button>
-  <button onclick="daily()">Daily</button>
+  <!-- ACTIONS -->
+  <button class="spin-btn" onclick="spin()">SPIN</button>
+  <button onclick="daily()">Daily Reward</button>
 
-  <script>
-    let userId = localStorage.getItem("userId") || "";
-    let betAmount = 50;
+</div>
 
-    const API = "https://win-win-production.up.railway.app";
+<script>
+let userId = localStorage.getItem("userId") || "";
+let betAmount = 50;
 
-    // 🔊 Sounds
-    const spinSound = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
-    const winSound = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
+const API = "https://win-win-production.up.railway.app";
 
-    // 🔓 Unlock sound
-    document.body.addEventListener("click", () => {
-      spinSound.play().then(() => {
-        spinSound.pause();
-        spinSound.currentTime = 0;
-      }).catch(() => {});
-    }, { once: true });
+const spinSound = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+const winSound = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
 
-    // 👤 LOGIN
-    async function register() {
-      const username = document.getElementById("username").value;
+// Unlock sound
+document.body.addEventListener("click", () => {
+  spinSound.play().then(() => {
+    spinSound.pause();
+    spinSound.currentTime = 0;
+  }).catch(() => {});
+}, { once: true });
 
-      if (!username) {
-        alert("Enter username");
-        return;
+async function register() {
+  const username = document.getElementById("username").value;
+  if (!username) return alert("Enter username");
+
+  const res = await fetch(`${API}/register?username=${username}`);
+  const data = await res.json();
+
+  userId = data.userId;
+  localStorage.setItem("userId", userId);
+
+  updateUI(data);
+  alert("Logged in!");
+}
+
+function setBet(amount) {
+  betAmount = amount;
+  document.getElementById("betDisplay").innerText = "Bet: " + amount;
+}
+
+async function spin() {
+  if (!userId) return alert("Login first");
+
+  document.getElementById("result").innerText = "Spinning...";
+
+  spinSound.currentTime = 0;
+  spinSound.play().catch(() => {});
+
+  const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑"];
+
+  let interval = setInterval(() => {
+    r1.innerText = symbols[Math.floor(Math.random()*symbols.length)];
+    r2.innerText = symbols[Math.floor(Math.random()*symbols.length)];
+    r3.innerText = symbols[Math.floor(Math.random()*symbols.length)];
+  }, 100);
+
+  try {
+    const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}&machine=basic`);
+    const data = await res.json();
+
+    clearInterval(interval);
+
+    setTimeout(() => r1.innerText = data.reels[0], 200);
+    setTimeout(() => r2.innerText = data.reels[1], 500);
+    setTimeout(() => r3.innerText = data.reels[2], 800);
+
+    setTimeout(() => {
+      if (data.win > 0) {
+        winSound.play();
+        result.innerText = "🎉 WON " + data.win;
+      } else {
+        result.innerText = "Try again";
       }
-
-      const res = await fetch(`${API}/register?username=${username}`);
-      const data = await res.json();
-
-      userId = data.userId;
-      localStorage.setItem("userId", userId);
-
       updateUI(data);
-      alert("Logged in!");
-    }
+    }, 900);
 
-    // 💰 SET BET
-    function setBet(amount) {
-      betAmount = amount;
-      document.getElementById("betDisplay").innerText = "Current Bet: " + betAmount;
-    }
+  } catch {
+    clearInterval(interval);
+    result.innerText = "Error";
+  }
+}
 
-    // 🎰 SPIN
-    async function spin() {
-      if (!userId) {
-        alert("Login first!");
-        return;
-      }
+async function daily() {
+  if (!userId) return alert("Login first");
 
-      document.getElementById("result").innerText = "Spinning...";
+  const res = await fetch(`${API}/daily?userId=${userId}`);
+  const data = await res.json();
 
-      spinSound.currentTime = 0;
-      spinSound.play().catch(() => {});
+  alert(data.message || data.error);
+  updateUI(data);
+}
 
-      const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑"];
+function updateUI(data) {
+  if (data.balance !== undefined)
+    balance.innerText = "💰 Balance: " + data.balance;
 
-      let interval = setInterval(() => {
-        document.getElementById("r1").innerText = symbols[Math.floor(Math.random()*symbols.length)];
-        document.getElementById("r2").innerText = symbols[Math.floor(Math.random()*symbols.length)];
-        document.getElementById("r3").innerText = symbols[Math.floor(Math.random()*symbols.length)];
-      }, 100);
-
-      try {
-        const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}&machine=basic`);
-        const data = await res.json();
-
-        clearInterval(interval);
-
-        // 🎡 Reel stop animation
-        setTimeout(() => {
-          document.getElementById("r1").innerText = data.reels[0];
-        }, 200);
-
-        setTimeout(() => {
-          document.getElementById("r2").innerText = data.reels[1];
-        }, 500);
-
-        setTimeout(() => {
-          document.getElementById("r3").innerText = data.reels[2];
-        }, 800);
-
-        // 🎯 Result
-        setTimeout(() => {
-          if (data.win > 0) {
-            winSound.play();
-            document.getElementById("result").innerText = "🎉 YOU WON " + data.win;
-          } else {
-            document.getElementById("result").innerText = "Try again";
-          }
-
-          updateUI(data);
-        }, 900);
-
-      } catch (err) {
-        clearInterval(interval);
-        document.getElementById("result").innerText = "Error spinning";
-      }
-    }
-
-    // 🎁 DAILY
-    async function daily() {
-      if (!userId) {
-        alert("Login first!");
-        return;
-      }
-
-      const res = await fetch(`${API}/daily?userId=${userId}`);
-      const data = await res.json();
-
-      alert(data.message || data.error);
-      updateUI(data);
-    }
-
-    // 🔄 UPDATE UI
-    function updateUI(data) {
-      if (data.balance !== undefined)
-        document.getElementById("balance").innerText = "Balance: " + data.balance;
-
-      if (data.level !== undefined)
-        document.getElementById("level").innerText = "Level: " + data.level;
-    }
-  </script>
+  if (data.level !== undefined)
+    level.innerText = "⭐ Level: " + data.level;
+}
+</script>
 
 </body>
 </html>
