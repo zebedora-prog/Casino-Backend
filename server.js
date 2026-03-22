@@ -83,8 +83,9 @@ app.get("/spin", async (req, res) => {
       return res.json({ error: "Not enough balance" });
     }
 
-    const symbols = machines.basic.symbols;
-
+    const selected = machines[req.query.machine] || machines.basic;
+const symbols = selected.symbols;
+    
     user.balance -= bet;
 
     const r1 = symbols[Math.floor(Math.random() * 3)];
@@ -94,9 +95,8 @@ app.get("/spin", async (req, res) => {
     let win = 0;
 
     if (r1 === r2 && r2 === r3) {
-      win = bet * 5;
-      user.balance += win;
-    }
+  win = bet * (selected.payouts[r1] || 5);
+}
 
     // XP system
     user.xp = user.xp || 0;
