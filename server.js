@@ -94,9 +94,11 @@ app.get("/spin", async (req, res) => {
 
     const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑","🃏"];
 
-    const reels = Array.from({ length: 5 }, () =>
-      symbols[Math.floor(Math.random() * symbols.length)]
-    );
+   const reels = Array.from({ length: 5 }, () =>
+  Array.from({ length: 3 }, () =>
+    symbols[Math.floor(Math.random() * symbols.length)]
+  )
+);
 
     let win = 0;
 
