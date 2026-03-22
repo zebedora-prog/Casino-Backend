@@ -28,30 +28,37 @@
     let userId = "";
     const API = "https://win-win-production.up.railway.app";
 
-    async function register() {
-      const username = document.getElementById("username").value;
-      const res = await fetch(`${API}/register?username=${username}`);
-      const data = await res.json();
+  async function spin() {
+  document.getElementById("result").innerText = "Spinning...";
 
-      userId = data.userId;
-      updateUI(data);
-    }
+  const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑"];
 
-    async function spin() {
-      document.getElementById("result").innerText = "Spinning...";
+  // 🎡 Fake spinning animation
+  let spins = 15;
+  let interval = setInterval(() => {
+    document.getElementById("r1").innerText = symbols[Math.floor(Math.random()*symbols.length)];
+    document.getElementById("r2").innerText = symbols[Math.floor(Math.random()*symbols.length)];
+    document.getElementById("r3").innerText = symbols[Math.floor(Math.random()*symbols.length)];
+  }, 100);
 
-      const res = await fetch(`${API}/spin?userId=${userId}&bet=50&machine=basic`);
-      const data = await res.json();
+  // 🔗 Real backend call
+  const res = await fetch(`${API}/spin?userId=${userId}&bet=50&machine=basic`);
+  const data = await res.json();
 
-      document.getElementById("r1").innerText = data.reels[0];
-      document.getElementById("r2").innerText = data.reels[1];
-      document.getElementById("r3").innerText = data.reels[2];
+  // ⏹ Stop animation after delay
+  setTimeout(() => {
+    clearInterval(interval);
 
-      document.getElementById("result").innerText =
-        data.win > 0 ? "🎉 YOU WON " + data.win : "Try again";
+    document.getElementById("r1").innerText = data.reels[0];
+    document.getElementById("r2").innerText = data.reels[1];
+    document.getElementById("r3").innerText = data.reels[2];
 
-      updateUI(data);
-    }
+    document.getElementById("result").innerText =
+      data.win > 0 ? "🎉 YOU WON " + data.win : "Try again";
+
+    updateUI(data);
+  }, 1500);
+}
 
     async function daily() {
       const res = await fetch(`${API}/daily?userId=${userId}`);
