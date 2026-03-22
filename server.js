@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 
 const app = express();
 app.use(express.json());
+https://your-railway-url/index.html
 
 // User schema
 const User = mongoose.model("User", {
