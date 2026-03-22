@@ -1,22 +1,9 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const path = require("path");
 
 const app = express();
 app.use(express.json());
 
-// ✅ SERVE FRONTEND
-app.use(express.static(path.join(__dirname, "public")));
-app.get("/", (req, res) => {
-  res.sendFile(require("path").join(__dirname, "public", "index.html"));
-});
-const path = require("path");
-
-app.use(express.static(path.join(__dirname, "public")));
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
 // 👤 User Schema
 const User = mongoose.model("User", {
   username: String,
@@ -40,8 +27,10 @@ mongoose.connect(process.env.MONGO_URI, {
   console.error("❌ MongoDB error:", err);
 });
 
-// ❌ REMOVE OLD "/" ROUTE
-// (do NOT add app.get("/") anymore)
+// 🏠 Home (SAFE)
+app.get("/", (req, res) => {
+  res.send("Backend is running 🚀");
+});
 
 // 👤 Register/Login
 app.get("/register", async (req, res) => {
