@@ -29,11 +29,11 @@
     }
 
     .reel {
-      width: 60px;
-      height: 60px;
+      width: 70px;
+      height: 70px;
       background: black;
       border-radius: 10px;
-      font-size: 30px;
+      font-size: 32px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -75,7 +75,7 @@
     #line-zig3 { background: lime; }
 
     .win-symbol {
-      animation: glow 0.5s infinite alternate;
+      animation: glow 0.4s infinite alternate;
     }
 
     @keyframes glow {
@@ -87,6 +87,7 @@
       padding: 10px 20px;
       margin: 10px;
       font-size: 16px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -104,17 +105,20 @@
 
 <div id="result"></div>
 
+<!-- 🔊 SOUND -->
+<audio id="spinSound" src="https://www.soundjay.com/misc/sounds/slot-machine-1.mp3"></audio>
+<audio id="winSound" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"></audio>
+
 <div id="slotWrapper">
-  <!-- straight -->
+
+  <!-- paylines -->
   <div id="line-top" class="payline"></div>
   <div id="line-mid" class="payline"></div>
   <div id="line-bot" class="payline"></div>
 
-  <!-- diagonals -->
   <div id="line-diag1" class="payline diag"></div>
   <div id="line-diag2" class="payline diag"></div>
 
-  <!-- zigzag -->
   <div id="line-zig1" class="payline diag"></div>
   <div id="line-zig2" class="payline diag"></div>
   <div id="line-zig3" class="payline diag"></div>
@@ -146,6 +150,8 @@ async function register() {
 async function spin() {
   if (!userId) return alert("Login first");
 
+  document.getElementById("spinSound").play();
+
   const result = document.getElementById("result");
 
   const rows = 3;
@@ -175,7 +181,6 @@ async function spin() {
     slots.appendChild(rowDiv);
   }
 
-  // fetch
   const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}`);
   const data = await res.json();
 
@@ -185,7 +190,7 @@ async function spin() {
 
   const intervals = [];
 
-  // spin animation
+  // 🎰 spin animation
   for (let c = 0; c < cols; c++) {
     intervals[c] = setInterval(() => {
       for (let r = 0; r < rows; r++) {
@@ -195,7 +200,7 @@ async function spin() {
     }, 80);
   }
 
-  // stop reels
+  // 🛑 stop reels
   for (let c = 0; c < cols; c++) {
     setTimeout(() => {
       clearInterval(intervals[c]);
@@ -207,15 +212,35 @@ async function spin() {
     }, 500 + c * 300);
   }
 
-  // result + paylines
+  // 🎉 result
   setTimeout(() => {
     result.innerText = data.win > 0
       ? "🎉 WIN " + data.win
       : "Try again";
 
+    if (data.win > 0) {
+      document.getElementById("winSound").play();
+    }
+
     checkPaylines(grid);
 
   }, 500 + cols * 300);
+}
+
+// 🎯 REAL MATCH LOGIC (3+)
+function isWinningLine(symbols) {
+  let first = symbols[0];
+  let count = 1;
+
+  for (let i = 1; i < symbols.length; i++) {
+    if (symbols[i] === first || symbols[i] === "🃏" || first === "🃏") {
+      count++;
+    } else {
+      break;
+    }
+  }
+
+  return count >= 3;
 }
 
 // 🎯 PAYLINES WITH ANIMATION
@@ -235,9 +260,8 @@ function checkPaylines(grid) {
 
   lines.forEach(line => {
     const symbols = line.cells.map(c => c.innerText);
-    let match = symbols.every(s => s === symbols[0] || s === "🃏");
 
-    if (match) {
+    if (isWinningLine(symbols)) {
       const el = document.getElementById(line.id);
 
       if (el) {
