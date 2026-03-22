@@ -86,6 +86,8 @@ app.get("/spin", async (req, res) => {
   try {
     const { userId, bet, machine } = req.query;
 
+    console.log("SPIN INPUT:", req.query); // 👈 debug
+
     if (!userId) {
       return res.json({ error: "userId required" });
     }
@@ -106,12 +108,15 @@ app.get("/spin", async (req, res) => {
     }
 
     const selected = machines[machine] || machines.basic;
+
+    if (!selected) {
+      return res.json({ error: "Invalid machine" });
+    }
+
     const symbols = selected.symbols;
 
-    // Deduct bet
     user.balance -= betAmount;
 
-    // Spin
     const reel1 = symbols[Math.floor(Math.random() * symbols.length)];
     const reel2 = symbols[Math.floor(Math.random() * symbols.length)];
     const reel3 = symbols[Math.floor(Math.random() * symbols.length)];
@@ -125,6 +130,35 @@ app.get("/spin", async (req, res) => {
     const win = betAmount * multiplier;
     user.balance += win;
 
+    // XP
+    user.xp = user.xp || 0;
+    user.level = user.level || 1;
+
+    user.xp += betAmount;
+
+    const xpNeeded = user.level * 100;
+
+    if (user.xp >= xpNeeded) {
+      user.level += 1;
+      user.xp = 0;
+      user.balance += 500;
+    }
+
+    await user.save();
+
+    res.json({
+      reels: [reel1, reel2, reel3],
+      win,
+      balance: user.balance,
+      xp: user.xp,
+      level: user.level
+    });
+
+  } catch (err) {
+    console.error("🔥 REAL SPIN ERROR:", err); // 👈 THIS IS KEY
+    res.status(500).json({ error: err.message }); // 👈 show real error
+  }
+});
     // 🎯 XP SYSTEM
     const xpGain = betAmount;
     user.xp += xpGain;
