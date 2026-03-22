@@ -53,8 +53,21 @@
     #line-top { top: 20%; background: red; }
     #line-mid { top: 50%; background: yellow; }
     #line-bot { top: 80%; background: cyan; }
-<div id="line-diag1" class="payline diag"></div>
-<div id="line-diag2" class="payline diag"></div>
+
+    .diag {
+      top: 50%;
+      transform: translateX(-50%) rotate(25deg);
+      background: lime;
+    }
+
+    #line-diag2 {
+      transform: translateX(-50%) rotate(-25deg);
+    }
+
+    #line-zig1 { background: orange; }
+    #line-zig2 { background: pink; }
+    #line-zig3 { background: lime; }
+
     .win-symbol {
       animation: glow 0.5s infinite alternate;
     }
@@ -70,9 +83,6 @@
       font-size: 16px;
     }
   </style>
-  #line-zig1 { background: orange; }
-#line-zig2 { background: pink; }
-#line-zig3 { background: lime; }
 </head>
 
 <body>
@@ -89,14 +99,20 @@
 <div id="result"></div>
 
 <div id="slotWrapper">
+  <!-- straight -->
   <div id="line-top" class="payline"></div>
   <div id="line-mid" class="payline"></div>
   <div id="line-bot" class="payline"></div>
-<div id="line-diag1" class="payline diag"></div>
-<div id="line-diag2" class="payline diag"></div>
+
+  <!-- diagonals -->
+  <div id="line-diag1" class="payline diag"></div>
+  <div id="line-diag2" class="payline diag"></div>
+
+  <!-- zigzag -->
   <div id="line-zig1" class="payline diag"></div>
-<div id="line-zig2" class="payline diag"></div>
-<div id="line-zig3" class="payline diag"></div>
+  <div id="line-zig2" class="payline diag"></div>
+  <div id="line-zig3" class="payline diag"></div>
+
   <div class="slots" id="slots"></div>
 </div>
 
@@ -108,36 +124,28 @@ const API = "https://win-win-production.up.railway.app";
 let userId = null;
 let betAmount = 10;
 
-// ✅ LOGIN FIXED
+// ✅ LOGIN
 async function register() {
   try {
     const username = document.getElementById("username").value;
 
-    if (!username) {
-      alert("Enter username");
-      return;
-    }
+    if (!username) return alert("Enter username");
 
     const res = await fetch(`${API}/register?username=${username}`);
     const data = await res.json();
 
-    if (data.error) {
-      alert(data.error);
-      return;
-    }
+    if (data.error) return alert(data.error);
 
     userId = data.userId;
-
-    console.log("USER ID:", userId);
     alert("Logged in!");
 
   } catch (err) {
-    console.error("LOGIN ERROR:", err);
+    console.error(err);
     alert("Login failed");
   }
 }
 
-// 🎰 SPIN (FULLY SAFE)
+// 🎰 SPIN
 async function spin() {
   try {
     if (!userId) return alert("Login first");
@@ -152,7 +160,7 @@ async function spin() {
 
     let grid = [];
 
-    // 🔨 build grid
+    // build grid
     for (let r = 0; r < rows; r++) {
       const rowDiv = document.createElement("div");
       rowDiv.className = "row";
@@ -171,18 +179,15 @@ async function spin() {
       slots.appendChild(rowDiv);
     }
 
-    // 🎯 fetch result FIRST (important)
+    // fetch backend
     const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}`);
     const data = await res.json();
 
-    if (data.error) {
-      alert(data.error);
-      return;
-    }
+    if (data.error) return alert(data.error);
 
     const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑","🃏"];
 
-    // 🎰 start spinning
+    // spin animation
     const intervals = [];
 
     for (let c = 0; c < cols; c++) {
@@ -194,41 +199,47 @@ async function spin() {
       }, 80);
     }
 
-    // 🛑 stop reels one by one
+    // stop reels
     for (let c = 0; c < cols; c++) {
       setTimeout(() => {
         clearInterval(intervals[c]);
 
         for (let r = 0; r < rows; r++) {
-  grid[r][c].innerText = data.reels[c][r];
-}
+          grid[r][c].innerText = data.reels[c][r]; // ✅ FIXED
+        }
 
       }, 500 + c * 300);
     }
 
-    // 🎉 result after spin
+    // result + paylines
     setTimeout(() => {
-      if (data.win > 0) {
-        result.innerText = "🎉 WIN " + data.win;
-      } else {
-        result.innerText = "Try again";
-      }
+      result.innerText = data.win > 0
+        ? "🎉 WIN " + data.win
+        : "Try again";
 
-     function checkPaylines(grid, data) {
+      checkPaylines(grid);
+
+    }, 500 + cols * 300);
+
+  } catch (err) {
+    console.error(err);
+    alert("Spin crashed");
+  }
+}
+
+// 🎯 PAYLINES (FIXED — no data.win restriction)
+function checkPaylines(grid) {
   const lines = [
-    // straight
-    { cells: [grid[0][0], grid[0][1], grid[0][2], grid[0][3], grid[0][4]], id: "line-top" },
-    { cells: [grid[1][0], grid[1][1], grid[1][2], grid[1][3], grid[1][4]], id: "line-mid" },
-    { cells: [grid[2][0], grid[2][1], grid[2][2], grid[2][3], grid[2][4]], id: "line-bot" },
+    { cells: [grid[0][0],grid[0][1],grid[0][2],grid[0][3],grid[0][4]], id:"line-top" },
+    { cells: [grid[1][0],grid[1][1],grid[1][2],grid[1][3],grid[1][4]], id:"line-mid" },
+    { cells: [grid[2][0],grid[2][1],grid[2][2],grid[2][3],grid[2][4]], id:"line-bot" },
 
-    // diagonals
-    { cells: [grid[0][0], grid[1][1], grid[2][2], grid[1][3], grid[0][4]], id: "line-diag1" },
-    { cells: [grid[2][0], grid[1][1], grid[0][2], grid[1][3], grid[2][4]], id: "line-diag2" },
+    { cells: [grid[0][0],grid[1][1],grid[2][2],grid[1][3],grid[0][4]], id:"line-diag1" },
+    { cells: [grid[2][0],grid[1][1],grid[0][2],grid[1][3],grid[2][4]], id:"line-diag2" },
 
-    // 🔥 ZIG-ZAG PATTERNS
-    { cells: [grid[0][0], grid[1][1], grid[0][2], grid[1][3], grid[0][4]], id: "line-zig1" }, // V shape
-    { cells: [grid[2][0], grid[1][1], grid[2][2], grid[1][3], grid[2][4]], id: "line-zig2" }, // inverted V
-    { cells: [grid[1][0], grid[0][1], grid[1][2], grid[2][3], grid[1][4]], id: "line-zig3" }  // wave
+    { cells: [grid[0][0],grid[1][1],grid[0][2],grid[1][3],grid[0][4]], id:"line-zig1" },
+    { cells: [grid[2][0],grid[1][1],grid[2][2],grid[1][3],grid[2][4]], id:"line-zig2" },
+    { cells: [grid[1][0],grid[0][1],grid[1][2],grid[2][3],grid[1][4]], id:"line-zig3" }
   ];
 
   lines.forEach(line => {
@@ -236,7 +247,7 @@ async function spin() {
 
     let match = symbols.every(s => s === symbols[0] || s === "🃏");
 
-    if (match && data.win > 0) {
+    if (match) {
       const el = document.getElementById(line.id);
       if (el) el.style.display = "block";
 
@@ -245,43 +256,6 @@ async function spin() {
       setTimeout(() => {
         if (el) el.style.display = "none";
         line.cells.forEach(cell => cell.classList.remove("win-symbol"));
-      }, 1500);
-    }
-  });
-}
-    }, 500 + cols * 300);
-
-  } catch (err) {
-    console.error("SPIN ERROR:", err);
-    alert("Spin crashed");
-  }
-}
-
-// 🎯 PAYLINES
-function checkPaylines(grid, data) {
-  const paylines = [
-    { row: 0, id: "line-top" },
-    { row: 1, id: "line-mid" },
-    { row: 2, id: "line-bot" }
-  ];
-
-  paylines.forEach(line => {
-    const symbols = grid[line.row].map(c => c.innerText);
-
-    let match = symbols.every(s => s === symbols[0] || s === "🃏");
-
-    if (match)
-      document.getElementById(line.id).style.display = "block";
-
-      grid[line.row].forEach(cell =>
-        cell.classList.add("win-symbol")
-      );
-
-      setTimeout(() => {
-        document.getElementById(line.id).style.display = "none";
-        grid[line.row].forEach(cell =>
-          cell.classList.remove("win-symbol")
-        );
       }, 1500);
     }
   });
