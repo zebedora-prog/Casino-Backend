@@ -1,18 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Casino</title>
+  <title>Vegas Slots</title>
+
   <style>
     body {
-      background: #111;
-      color: white;
+      background: radial-gradient(circle, #1a0000, #000);
+      color: gold;
       font-family: Arial;
       text-align: center;
+    }
+
+    h1 {
+      text-shadow: 0 0 10px gold;
+    }
+
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      font-size: 16px;
+    }
+
+    button {
+      background: gold;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
     }
 
     .slots {
       display: inline-block;
       margin-top: 20px;
+      position: relative;
     }
 
     .row {
@@ -20,44 +39,66 @@
     }
 
     .reel {
-      width: 70px;
-      height: 70px;
+      width: 80px;
+      height: 80px;
+      margin: 5px;
+      font-size: 40px;
       background: black;
       border: 2px solid gold;
-      margin: 4px;
-      font-size: 30px;
       display: flex;
       align-items: center;
       justify-content: center;
+      box-shadow: inset 0 0 10px gold;
     }
 
-    button {
-      margin-top: 15px;
-      padding: 10px 20px;
-      font-size: 18px;
-      background: gold;
-      border: none;
-      cursor: pointer;
+    .win-symbol {
+      animation: glow 0.6s infinite alternate;
+    }
+
+    @keyframes glow {
+      from { box-shadow: 0 0 5px gold; }
+      to { box-shadow: 0 0 20px gold; }
+    }
+
+    svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+
+    line {
+      stroke: red;
+      stroke-width: 4;
+      stroke-dasharray: 200;
+      stroke-dashoffset: 200;
+      animation: draw 0.5s forwards;
+    }
+
+    @keyframes draw {
+      to { stroke-dashoffset: 0; }
     }
   </style>
 </head>
 
 <body>
 
-<h1>🎰 Slot Machine</h1>
+<h1>🎰 Vegas Slots</h1>
 
-<input id="username" placeholder="Enter username">
+<input id="username" placeholder="Username">
 <button onclick="login()">Login</button>
 
 <h2 id="balance"></h2>
 <h3 id="result"></h3>
 
-<div class="slots" id="slots"></div>
+<div class="slots" id="slots">
+  <svg id="paylines" width="450" height="270"></svg>
+</div>
 
 <button onclick="spin()">SPIN</button>
 
 <script>
-const API = "https://zebedora-prog-casino-backend.up.railway.app";
+const API = "PASTE_YOUR_REAL_RAILWAY_URL_HERE";
 
 let userId = null;
 let betAmount = 10;
@@ -66,17 +107,11 @@ let betAmount = 10;
 async function login() {
   const username = document.getElementById("username").value;
 
-  if (!username) {
-    alert("Enter username");
-    return;
-  }
+  if (!username) return alert("Enter username");
 
   try {
     const res = await fetch(`${API}/register?username=${username}`);
-
     const data = await res.json();
-
-    console.log("LOGIN DATA:", data);
 
     if (!data || data.error) {
       alert(data?.error || "Login failed");
@@ -84,20 +119,15 @@ async function login() {
     }
 
     userId = data.userId;
+    document.getElementById("balance").innerText = "Balance: " + data.balance;
+    document.getElementById("result").innerText = "Logged in";
 
-    document.getElementById("balance").innerText =
-      "Balance: " + data.balance;
-
-    document.getElementById("result").innerText =
-      "Logged in as " + username;
-
-  } catch (err) {
-    console.error("LOGIN ERROR:", err);
-    alert("Connection failed");
+  } catch {
+    alert("Connection error");
   }
 }
 
-// SPIN (STABLE VERSION)
+// SPIN
 async function spin() {
   if (!userId) return alert("Login first");
 
@@ -105,7 +135,10 @@ async function spin() {
   const cols = 5;
 
   const slots = document.getElementById("slots");
-  slots.innerHTML = "";
+  const paylinesSVG = document.getElementById("paylines");
+
+  paylinesSVG.innerHTML = "";
+  slots.querySelectorAll(".row").forEach(e => e.remove());
 
   let grid = [];
 
@@ -146,16 +179,13 @@ async function spin() {
     const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}`);
     data = await res.json();
 
-    console.log("DATA:", data);
-
     if (!data || data.error) {
       document.getElementById("result").innerText =
         data?.error || "Error";
       return;
     }
 
-  } catch (err) {
-    console.error(err);
+  } catch {
     document.getElementById("result").innerText = "Connection error";
     return;
   }
@@ -172,15 +202,61 @@ async function spin() {
     }, c * 300);
   }
 
-  // RESULT
+  // RESULT + PAYLINES
   setTimeout(() => {
-    document.getElementById("result").innerText =
-      data.win > 0 ? "🎉 WIN " + data.win : "Try again";
 
     document.getElementById("balance").innerText =
       "Balance: " + data.balance;
 
+    if (data.win > 0) {
+      document.getElementById("result").innerText = "🎉 WIN " + data.win;
+
+      checkWins(grid);
+
+    } else {
+      document.getElementById("result").innerText = "Try again";
+    }
+
   }, cols * 300 + 200);
+}
+
+// 🎯 CHECK PAYLINES
+function checkWins(grid) {
+  const paylines = document.getElementById("paylines");
+
+  const lines = [
+    [1,1,1,1,1], // center
+    [0,1,2,1,0], // V
+    [2,1,0,1,2]  // inverted V
+  ];
+
+  lines.forEach(line => {
+    let symbols = line.map((row, col) => grid[row][col].innerText);
+
+    if (symbols.every(s => s === symbols[0] || s === "🃏")) {
+
+      // GLOW SYMBOLS
+      line.forEach((row, col) => {
+        grid[row][col].classList.add("win-symbol");
+      });
+
+      // DRAW LINE
+      let startX = 40;
+      let endX = 400;
+
+      let startY = line[0] * 90 + 45;
+      let endY = line[4] * 90 + 45;
+
+      const lineEl = document.createElementNS("http://www.w3.org/2000/svg", "line");
+
+      lineEl.setAttribute("x1", startX);
+      lineEl.setAttribute("y1", startY);
+      lineEl.setAttribute("x2", endX);
+      lineEl.setAttribute("y2", endY);
+
+      paylines.appendChild(lineEl);
+    }
+  });
 }
 </script>
 
