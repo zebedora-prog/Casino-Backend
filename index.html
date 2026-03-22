@@ -50,7 +50,7 @@ const winSound = new Audio("https://www.soundjay.com/misc/sounds/small-bell-ring
 
     async function spin() {
      spinSound.currentTime = 0;
-spinSound.play();
+spinSound.play().catch(err => console.log("Sound blocked:", err));
       if (!userId) {
         alert("Login first!");
         return;
