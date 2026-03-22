@@ -70,6 +70,9 @@
       font-size: 16px;
     }
   </style>
+  #line-zig1 { background: orange; }
+#line-zig2 { background: pink; }
+#line-zig3 { background: lime; }
 </head>
 
 <body>
@@ -91,6 +94,9 @@
   <div id="line-bot" class="payline"></div>
 <div id="line-diag1" class="payline diag"></div>
 <div id="line-diag2" class="payline diag"></div>
+  <div id="line-zig1" class="payline diag"></div>
+<div id="line-zig2" class="payline diag"></div>
+<div id="line-zig3" class="payline diag"></div>
   <div class="slots" id="slots"></div>
 </div>
 
@@ -208,8 +214,41 @@ async function spin() {
         result.innerText = "Try again";
       }
 
-      checkPaylines(grid, data);
+     function checkPaylines(grid, data) {
+  const lines = [
+    // straight
+    { cells: [grid[0][0], grid[0][1], grid[0][2], grid[0][3], grid[0][4]], id: "line-top" },
+    { cells: [grid[1][0], grid[1][1], grid[1][2], grid[1][3], grid[1][4]], id: "line-mid" },
+    { cells: [grid[2][0], grid[2][1], grid[2][2], grid[2][3], grid[2][4]], id: "line-bot" },
 
+    // diagonals
+    { cells: [grid[0][0], grid[1][1], grid[2][2], grid[1][3], grid[0][4]], id: "line-diag1" },
+    { cells: [grid[2][0], grid[1][1], grid[0][2], grid[1][3], grid[2][4]], id: "line-diag2" },
+
+    // 🔥 ZIG-ZAG PATTERNS
+    { cells: [grid[0][0], grid[1][1], grid[0][2], grid[1][3], grid[0][4]], id: "line-zig1" }, // V shape
+    { cells: [grid[2][0], grid[1][1], grid[2][2], grid[1][3], grid[2][4]], id: "line-zig2" }, // inverted V
+    { cells: [grid[1][0], grid[0][1], grid[1][2], grid[2][3], grid[1][4]], id: "line-zig3" }  // wave
+  ];
+
+  lines.forEach(line => {
+    const symbols = line.cells.map(c => c.innerText);
+
+    let match = symbols.every(s => s === symbols[0] || s === "🃏");
+
+    if (match && data.win > 0) {
+      const el = document.getElementById(line.id);
+      if (el) el.style.display = "block";
+
+      line.cells.forEach(cell => cell.classList.add("win-symbol"));
+
+      setTimeout(() => {
+        if (el) el.style.display = "none";
+        line.cells.forEach(cell => cell.classList.remove("win-symbol"));
+      }, 1500);
+    }
+  });
+}
     }, 500 + cols * 300);
 
   } catch (err) {
