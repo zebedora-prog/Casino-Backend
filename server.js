@@ -82,21 +82,50 @@ app.get("/register", async (req, res) => {
 });
 
 // 🎰 Spin
-/app/server.js:169
-    await user.save();
-    at Object..js (node:internal/modules/cjs/loader:1838:10)
-    ^^^^^
-    at Module.load (node:internal/modules/cjs/loader:1441:32)
-SyntaxError: await is only valid in async functions and the top level bodies of modules
-    at Function._load (node:internal/modules/cjs/loader:1263:12)
-    at wrapSafe (node:internal/modules/cjs/loader:1637:18)
-    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
-    at Module._compile (node:internal/modules/cjs/loader:1679:20)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
-    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
-    at node:internal/main/run_main_module:36:49
-Node.js v22.22.1
-    // 🎯 XP SYSTEM (SAFE)
+app.get("/spin", async (req, res) => {
+  try {
+    const { userId, bet, machine } = req.query;
+
+    if (!userId) {
+      return res.json({ error: "userId required" });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.json({ error: "Invalid userId" });
+    }
+
+    // Safe defaults
+    if (user.balance == null) user.balance = 1000;
+    if (user.xp == null) user.xp = 0;
+    if (user.level == null) user.level = 1;
+
+    const betAmount = parseInt(bet) || 10;
+
+    if (betAmount > user.balance) {
+      return res.json({ error: "Not enough balance" });
+    }
+
+    const selected = machines[machine] || machines.basic;
+    const symbols = selected.symbols;
+
+    user.balance -= betAmount;
+
+    const r1 = symbols[Math.floor(Math.random() * symbols.length)];
+    const r2 = symbols[Math.floor(Math.random() * symbols.length)];
+    const r3 = symbols[Math.floor(Math.random() * symbols.length)];
+
+    let multiplier = 0;
+
+    if (r1 === r2 && r2 === r3) {
+      multiplier = selected.payouts[r1] || 0;
+    }
+
+    const win = betAmount * multiplier;
+    user.balance += win;
+
+    // XP system
     user.xp += betAmount;
 
     const xpNeeded = user.level * 100;
@@ -110,7 +139,7 @@ Node.js v22.22.1
     await user.save();
 
     res.json({
-      reels: [reel1, reel2, reel3],
+      reels: [r1, r2, r3],
       win,
       balance: user.balance,
       xp: user.xp,
