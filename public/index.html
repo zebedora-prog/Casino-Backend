@@ -160,9 +160,9 @@ async function spin() {
   fetch(`${API}/spin?userId=${userId}&bet=${betAmount}`)
     .then(res => res.json())
     .then(resData => {
-      console.log("DATA:", resData);
-      data = resData;
-    })
+  console.log("DATA:", resData); //
+  data = resData;
+})
     .catch(err => {
       console.error("Fetch error:", err);
     });
