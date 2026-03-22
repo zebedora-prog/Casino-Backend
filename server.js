@@ -7,7 +7,16 @@ app.use(express.json());
 
 // ✅ SERVE FRONTEND
 app.use(express.static(path.join(__dirname, "public")));
+app.get("/", (req, res) => {
+  res.sendFile(require("path").join(__dirname, "public", "index.html"));
+});
+const path = require("path");
 
+app.use(express.static(path.join(__dirname, "public")));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 // 👤 User Schema
 const User = mongoose.model("User", {
   username: String,
