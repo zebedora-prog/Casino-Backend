@@ -1,68 +1,42 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Casino Slots</title>
-
+  <title>Casino</title>
   <style>
     body {
       background: #111;
       color: white;
-      text-align: center;
       font-family: Arial;
-    }
-
-    #slotWrapper {
-      position: relative;
-      margin: 30px auto;
-      width: fit-content;
+      text-align: center;
     }
 
     .slots {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+      display: inline-block;
+      margin-top: 20px;
     }
 
     .row {
       display: flex;
-      gap: 6px;
     }
 
     .reel {
       width: 70px;
       height: 70px;
       background: black;
-      border-radius: 10px;
-      font-size: 32px;
+      border: 2px solid gold;
+      margin: 4px;
+      font-size: 30px;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: transform 0.1s;
-    }
-
-    .payline {
-      position: absolute;
-      height: 4px;
-      background: red;
-      display: none;
-      z-index: 10;
-      border-radius: 5px;
-      box-shadow: 0 0 10px red, 0 0 20px red;
-    }
-
-    .win-symbol {
-      animation: glow 0.4s infinite alternate;
-    }
-
-    @keyframes glow {
-      from { box-shadow: 0 0 5px gold; }
-      to { box-shadow: 0 0 20px gold; }
     }
 
     button {
+      margin-top: 15px;
       padding: 10px 20px;
-      margin: 10px;
-      font-size: 16px;
+      font-size: 18px;
+      background: gold;
+      border: none;
       cursor: pointer;
     }
   </style>
@@ -70,50 +44,38 @@
 
 <body>
 
-<h1>🎰 Casino Slots</h1>
+<h1>🎰 Slot Machine</h1>
 
-<input id="username" placeholder="username">
-<button onclick="register()">Login</button>
+<input id="username" placeholder="Enter username">
+<button onclick="login()">Login</button>
 
-<br><br>
+<h2 id="balance"></h2>
+<h3 id="result"></h3>
+
+<div class="slots" id="slots"></div>
 
 <button onclick="spin()">SPIN</button>
 
-<div id="result"></div>
-
-<audio id="spinSound" src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3"></audio>
-<audio id="winSound" src="https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3"></audio>
-
-<div id="slotWrapper">
-  <div id="activeLine" class="payline"></div>
-  <div class="slots" id="slots"></div>
-</div>
-
 <script>
-const API = "https://win-win-production.up.railway.app";
+const API = "https://zebedora-prog-casino-backend.up.railway.app";
 
 let userId = null;
 let betAmount = 10;
 
 // LOGIN
-async function register() {
+async function login() {
   const username = document.getElementById("username").value;
-  if (!username) return alert("Enter username");
 
   const res = await fetch(`${API}/register?username=${username}`);
   const data = await res.json();
 
-  if (data.error) return alert(data.error);
-
   userId = data.userId;
-  alert("Logged in!");
+  document.getElementById("balance").innerText = "Balance: " + data.balance;
 }
 
-// SPIN
+// SPIN (STABLE VERSION)
 async function spin() {
   if (!userId) return alert("Login first");
-
-  document.getElementById("spinSound").play().catch(()=>{});
 
   const rows = 3;
   const cols = 5;
@@ -123,10 +85,10 @@ async function spin() {
 
   let grid = [];
 
-  // 🎨 BUILD GRID
+  // BUILD GRID
   for (let r = 0; r < rows; r++) {
-    const rowDiv = document.createElement("div");
-    rowDiv.className = "row";
+    const row = document.createElement("div");
+    row.className = "row";
     grid[r] = [];
 
     for (let c = 0; c < cols; c++) {
@@ -135,16 +97,16 @@ async function spin() {
       reel.innerText = "❓";
 
       grid[r][c] = reel;
-      rowDiv.appendChild(reel);
+      row.appendChild(reel);
     }
 
-    slots.appendChild(rowDiv);
+    slots.appendChild(row);
   }
 
   const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑","🃏"];
   const intervals = [];
 
-  // 🎰 START SPINNING
+  // START SPIN
   for (let c = 0; c < cols; c++) {
     intervals[c] = setInterval(() => {
       for (let r = 0; r < rows; r++) {
@@ -157,59 +119,42 @@ async function spin() {
   let data;
 
   try {
-    // ✅ WAIT FOR BACKEND (THIS FIXES EVERYTHING)
     const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}`);
     data = await res.json();
 
-    console.log("SPIN DATA:", data);
+    console.log("DATA:", data);
 
     if (!data || data.error) {
       document.getElementById("result").innerText =
-        data?.error || "Server error";
+        data?.error || "Error";
       return;
     }
 
   } catch (err) {
-    console.error("FETCH FAILED:", err);
-    document.getElementById("result").innerText = "Connection lost";
+    console.error(err);
+    document.getElementById("result").innerText = "Connection error";
     return;
   }
 
- // 🛑 STOP REELS CLEANLY (NO BUGS)
-for (let c = 0; c < 500 + cols * 400 + 200; c++) {
-  setTimeout(() => {
-
-    // 🧹 STOP SPIN LOOP
-    if (intervals[c]) {
+  // STOP REELS
+  for (let c = 0; c < cols; c++) {
+    setTimeout(() => {
       clearInterval(intervals[c]);
-      intervals[c] = null;
-    }
 
-    // 🎯 SET FINAL SYMBOLS
-    for (let r = 0; r < rows; r++) {
-      if (data.reels[r] && data.reels[r][c]) {
+      for (let r = 0; r < rows; r++) {
         grid[r][c].innerText = data.reels[r][c];
       }
-    }
 
-  }, 500 + c * 400); // ⬅️ slower + safer timing
-}
-  // 🎯 FINAL RESULT
+    }, c * 300);
+  }
+
+  // RESULT
   setTimeout(() => {
+    document.getElementById("result").innerText =
+      data.win > 0 ? "🎉 WIN " + data.win : "Try again";
 
-    if (data.win > 0) {
-      document.getElementById("result").innerText = "🎉 WIN " + data.win;
-      document.getElementById("result").classList.add("win");
-
-      document.getElementById("winSound").play().catch(()=>{});
-    } else {
-      document.getElementById("result").innerText = "Try again";
-    }
-
-    // 🎯 PAYLINES
-    if (data.winningLines && data.winningLines.length > 0) {
-      checkPaylines(grid, data.winningLines);
-    }
+    document.getElementById("balance").innerText =
+      "Balance: " + data.balance;
 
   }, cols * 300 + 200);
 }
