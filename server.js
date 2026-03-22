@@ -17,6 +17,10 @@ const machines = {
   basic: {
     symbols: ["🍒", "🍋", "🔔"],
     payouts: { "🍒": 2, "🍋": 3, "🔔": 5 }
+  },
+  premium: {
+    symbols: ["💎", "7️⃣", "👑"],
+    payouts: { "💎": 10, "7️⃣": 25, "👑": 100 }
   }
 };
 
