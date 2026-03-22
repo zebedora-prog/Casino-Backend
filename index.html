@@ -3,42 +3,52 @@
 <head>
   <title>Casino Game</title>
 </head>
-<body style="text-align:center; font-family:sans-serif;">
+<body style="text-align:center; font-family:sans-serif; background:black; color:white;">
 
   <h1>🎰 Casino Game</h1>
 
   <input id="username" placeholder="Enter username">
-  <button onclick="register()">Register / Login</button>
+  <button onclick="register()">Login</button>
 
-  <h2 id="balance"></h2>
-  <h3 id="level"></h3>
+  <h2 id="balance">Balance: 0</h2>
+  <h3 id="level">Level: 1</h3>
 
-  <h1 id="reels">🎰 🎰 🎰</h1>
+  <div style="font-size:60px; margin:20px;">
+    <span id="r1">🎰</span>
+    <span id="r2">🎰</span>
+    <span id="r3">🎰</span>
+  </div>
+
+  <h2 id="result"></h2>
 
   <button onclick="spin()">SPIN</button>
-  <button onclick="daily()">Daily Reward</button>
+  <button onclick="daily()">Daily</button>
 
   <script>
     let userId = "";
-
     const API = "https://win-win-production.up.railway.app";
 
     async function register() {
       const username = document.getElementById("username").value;
-
       const res = await fetch(`${API}/register?username=${username}`);
       const data = await res.json();
 
       userId = data.userId;
-
       updateUI(data);
     }
 
     async function spin() {
+      document.getElementById("result").innerText = "Spinning...";
+
       const res = await fetch(`${API}/spin?userId=${userId}&bet=50&machine=basic`);
       const data = await res.json();
 
-      document.getElementById("reels").innerText = data.reels.join(" ");
+      document.getElementById("r1").innerText = data.reels[0];
+      document.getElementById("r2").innerText = data.reels[1];
+      document.getElementById("r3").innerText = data.reels[2];
+
+      document.getElementById("result").innerText =
+        data.win > 0 ? "🎉 YOU WON " + data.win : "Try again";
 
       updateUI(data);
     }
@@ -47,7 +57,7 @@
       const res = await fetch(`${API}/daily?userId=${userId}`);
       const data = await res.json();
 
-      alert(JSON.stringify(data));
+      alert(data.message || data.error);
       updateUI(data);
     }
 
@@ -61,4 +71,3 @@
   </script>
 
 </body>
-</html>
