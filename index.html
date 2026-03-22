@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html>
-  <button class="spin-btn" onclick="spin()">🎰 SPIN</button>
 <head>
-  <title>Casino Game</title>
+  <title>Casino App</title>
 
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
+      font-family: Arial;
       background: linear-gradient(135deg, #0f172a, #1e293b);
       color: white;
       display: flex;
@@ -16,22 +15,21 @@
       height: 100vh;
     }
 
-    .app
-    <div class="topbar">
-  <div id="balance">💰 0</div>
-  <div id="level">⭐ Lv 1</div>
-</div>
-    {
+    .app {
+      width: 320px;
+      padding: 20px;
+      border-radius: 20px;
       background: rgba(255,255,255,0.05);
       backdrop-filter: blur(10px);
-      padding: 25px;
-      border-radius: 20px;
-      width: 320px;
       text-align: center;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
     }
 
-    h1 {
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      background: rgba(0,0,0,0.4);
+      padding: 10px;
+      border-radius: 12px;
       margin-bottom: 10px;
     }
 
@@ -40,129 +38,71 @@
       border-radius: 10px;
       border: none;
       width: 70%;
-      margin-bottom: 10px;
     }
 
     button {
-      padding: 10px 15px;
+      padding: 10px;
       margin: 5px;
       border: none;
       border-radius: 10px;
+      cursor: pointer;
       background: #3b82f6;
       color: white;
-      cursor: pointer;
-      transition: 0.2s;
+      box-shadow: 0 0 10px rgba(59,130,246,0.5);
     }
 
-    button:hover {
-      background: #2563eb;
-      transform: scale(1.05);
-    }
-
-    .balance {
-      margin: 10px 0;
-      font-size: 18px;
+    .spin-btn {
+      width: 100%;
+      font-size: 20px;
+      background: linear-gradient(45deg, #f59e0b, #facc15);
+      box-shadow: 0 0 20px gold;
     }
 
     .reels {
       font-size: 60px;
       margin: 20px 0;
-      letter-spacing: 10px;
+      background: rgba(0,0,0,0.6);
+      padding: 15px;
+      border-radius: 15px;
     }
 
-    .bet-buttons button {
-      background: #10b981;
+    .flash {
+      animation: flash 0.3s;
     }
 
-    .bet-buttons button:hover {
-      background: #059669;
+    @keyframes flash {
+      0% { background: white; }
+      100% { background: transparent; }
     }
 
-    .spin-btn {
-      background: #f59e0b;
-      font-size: 18px;
-      width: 100%;
-    }
-
-    .spin-btn:hover {
-      background: #d97706;
+    .win-glow {
+      text-shadow: 0 0 10px gold, 0 0 20px orange;
     }
 
     .result {
-      margin-top: 10px;
-      font-size: 18px;
-      min-height: 24px;
+      height: 25px;
+      margin: 10px;
     }
-    /* 💥 WIN FLASH */
-.flash {
-  animation: flash 0.4s ease;
-}
-
-@keyframes flash {
-  0% { background: white; }
-  100% { background: transparent; }
-}
-
-/* ✨ GLOW */
-.win-glow {
-  color: gold;
-  text-shadow: 0 0 10px gold, 0 0 20px orange, 0 0 30px yellow;
-}
   </style>
-  .topbar {
-  display: flex;
-  justify-content: space-between;
-  background: rgba(0,0,0,0.4);
-  padding: 10px;
-  border-radius: 12px;
-  margin-bottom: 15px;
-  font-weight: bold;
-}
-
-.spin-btn {
-  background: linear-gradient(45deg, #f59e0b, #facc15);
-  font-size: 22px;
-  font-weight: bold;
-  border-radius: 50px;
-  padding: 15px;
-  box-shadow: 0 0 15px rgba(255, 200, 0, 0.6);
-}
-
-.spin-btn:active {
-  transform: scale(0.95);
-}
-
-/* 💎 Neon glow buttons */
-button {
-  box-shadow: 0 0 10px rgba(59,130,246,0.5);
-}
-
-/* 🎰 Reel container */
-.reels {
-  background: rgba(0,0,0,0.6);
-  padding: 15px;
-  border-radius: 15px;
-  box-shadow: inset 0 0 20px black;
-}
 </head>
 
 <body>
 
 <div class="app">
 
-  <h1>🎰 Casino</h1>
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div id="balance">💰 0</div>
+    <div id="level">⭐ Lv 1</div>
+  </div>
 
   <!-- LOGIN -->
   <input id="username" placeholder="Username">
   <br>
   <button onclick="register()">Login</button>
 
-  <!-- BALANCE -->
-  <div class="balance" id="balance">💰 Balance: 0</div>
-  <div id="level">⭐ Level: 1</div>
-
   <!-- BET -->
-  <div class="bet-buttons">
+  <div>
     <button onclick="setBet(10)">10</button>
     <button onclick="setBet(50)">50</button>
     <button onclick="setBet(100)">100</button>
@@ -177,12 +117,11 @@ button {
     <span id="r3">🎰</span>
   </div>
 
-  <!-- RESULT -->
   <div class="result" id="result"></div>
 
   <!-- ACTIONS -->
-  <button class="spin-btn" onclick="spin()">SPIN</button>
-  <button onclick="daily()">Daily Reward</button>
+  <button class="spin-btn" onclick="spin()">🎰 SPIN</button>
+  <button onclick="daily()">Daily</button>
 
 </div>
 
@@ -195,7 +134,7 @@ const API = "https://win-win-production.up.railway.app";
 const spinSound = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
 const winSound = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
 
-// Unlock sound
+// unlock audio
 document.body.addEventListener("click", () => {
   spinSound.play().then(() => {
     spinSound.pause();
@@ -203,6 +142,7 @@ document.body.addEventListener("click", () => {
   }).catch(() => {});
 }, { once: true });
 
+// LOGIN
 async function register() {
   const username = document.getElementById("username").value;
   if (!username) return alert("Enter username");
@@ -214,18 +154,35 @@ async function register() {
   localStorage.setItem("userId", userId);
 
   updateUI(data);
-  alert("Logged in!");
 }
 
+// BET
 function setBet(amount) {
   betAmount = amount;
   document.getElementById("betDisplay").innerText = "Bet: " + amount;
 }
 
+// ANIMATE BALANCE (SAFE VERSION)
+function animateBalance(newBalance) {
+  const el = document.getElementById("balance");
+
+  let current = parseInt(el.innerText.replace(/\D/g,'')) || 0;
+
+  let interval = setInterval(() => {
+    if (current < newBalance) current += 5;
+    else if (current > newBalance) current -= 5;
+
+    el.innerText = "💰 " + current;
+
+    if (current === newBalance) clearInterval(interval);
+  }, 20);
+}
+
+// SPIN
 async function spin() {
   if (!userId) return alert("Login first");
 
-  document.getElementById("result").innerText = "Spinning...";
+  result.innerText = "Spinning...";
 
   spinSound.currentTime = 0;
   spinSound.play().catch(() => {});
@@ -250,28 +207,26 @@ async function spin() {
 
     setTimeout(() => {
       if (data.win > 0) {
-  winSound.play();
+        winSound.play();
 
-  // 💥 Flash screen
-  document.body.classList.add("flash");
-  setTimeout(() => document.body.classList.remove("flash"), 300);
+        document.body.classList.add("flash");
+        setTimeout(() => document.body.classList.remove("flash"), 300);
 
-  // ✨ Glow reels
-  r1.classList.add("win-glow");
-  r2.classList.add("win-glow");
-  r3.classList.add("win-glow");
+        r1.classList.add("win-glow");
+        r2.classList.add("win-glow");
+        r3.classList.add("win-glow");
 
-  setTimeout(() => {
-    r1.classList.remove("win-glow");
-    r2.classList.remove("win-glow");
-    r3.classList.remove("win-glow");
-  }, 1000);
+        setTimeout(() => {
+          r1.classList.remove("win-glow");
+          r2.classList.remove("win-glow");
+          r3.classList.remove("win-glow");
+        }, 1000);
 
-  result.innerText = "🎉 WON " + data.win;
+        result.innerText = "🎉 WON " + data.win;
+      } else {
+        result.innerText = "Try again";
+      }
 
-} else {
-  result.innerText = "Try again";
-}
       updateUI(data);
     }, 900);
 
@@ -281,6 +236,7 @@ async function spin() {
   }
 }
 
+// DAILY
 async function daily() {
   if (!userId) return alert("Login first");
 
@@ -291,18 +247,13 @@ async function daily() {
   updateUI(data);
 }
 
+// UPDATE UI
 function updateUI(data) {
- function animateBalance(newBalance) {
-  let current = parseInt(balance.innerText.replace(/\D/g,'')) || 0;
-
-  let interval = setInterval(() => {
-    if (current < newBalance) current += 5;
-    else if (current > newBalance) current -= 5;
-
+  if (data.balance !== undefined)
     animateBalance(data.balance);
 
-    if (current === newBalance) clearInterval(interval);
-  }, 20);
+  if (data.level !== undefined)
+    document.getElementById("level").innerText = "⭐ Lv " + data.level;
 }
 </script>
 
