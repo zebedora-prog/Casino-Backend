@@ -1,14 +1,9 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const path = require("path"); // ✅ MUST be here
 
 const app = express();
 app.use(express.json());
 
-// ✅ serve frontend
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
 // 👤 User Schema
 const User = mongoose.model("User", {
   username: String,
@@ -17,22 +12,7 @@ const User = mongoose.model("User", {
   level: Number
 });
 
-// 🔗 MongoDB
-mongoose.connect(process.env.MONGO_URI, {
-  serverSelectionTimeoutMS: 5000
-})
-.then(() => {
-  console.log("✅ MongoDB connected");
-
-  app.listen(process.env.PORT || 3000, "0.0.0.0", () => {
-    console.log("🚀 Server running");
-  });
-})
-.catch(err => {
-  console.error("❌ MongoDB error:", err);
-});
-
-// 🏠 Home (SAFE)
+// 🏠 ROOT (IMPORTANT - API CHECK)
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
@@ -66,7 +46,7 @@ app.get("/register", async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("REGISTER ERROR:", err);
     res.status(500).json({ error: "Register failed" });
   }
 });
@@ -93,80 +73,110 @@ app.get("/spin", async (req, res) => {
 
     const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑","🃏"];
 
-   const reels = Array.from({ length: 5 }, () =>
-  Array.from({ length: 3 }, () =>
-    symbols[Math.floor(Math.random() * symbols.length)]
-  )
-);
+    // 🎰 BUILD 3x5 GRID (ROWS x COLS)
+    const grid = Array.from({ length: 3 }, () => []);
 
-   const paylines = [
-  [0,0,0,0,0], // top
-  [1,1,1,1,1], // middle
-  [2,2,2,2,2], // bottom
-
-  [0,1,2,1,0], // diag down
-  [2,1,0,1,2], // diag up
-
-  [0,1,0,1,0], // zigzag
-  [2,1,2,1,2],
-  [1,0,1,2,1]
-];
-
-// 🎰 build 3x5 grid
-const grid = Array.from({ length: 3 }, () => []);
-
-for (let c = 0; c < 5; c++) {
-  const col = [];
-  for (let r = 0; r < 3; r++) {
-    col.push(symbols[Math.floor(Math.random() * symbols.length)]);
-  }
-  for (let r = 0; r < 3; r++) {
-    if (!grid[r]) grid[r] = [];
-    grid[r][c] = col[r];
-  }
-}
-
-let win = 0;
-let winningLines = [];
-
-// 🎯 check paylines
-paylines.forEach((line, index) => {
-  let first = null;
-  let count = 0;
-
-  for (let c = 0; c < 5; c++) {
-    const symbol = grid[line[c]][c];
-
-    if (!first && symbol !== "🃏") {
-      first = symbol;
+    for (let c = 0; c < 5; c++) {
+      for (let r = 0; r < 3; r++) {
+        grid[r][c] =
+          symbols[Math.floor(Math.random() * symbols.length)];
+      }
     }
 
-    if (
-      symbol === first ||
-      symbol === "🃏" ||
-      first === null
-    ) {
-      count++;
-    } else {
-      break;
-    }
-  }
+    // 🎯 PAYLINES
+    const paylines = [
+      [0,0,0,0,0], // top
+      [1,1,1,1,1], // middle
+      [2,2,2,2,2], // bottom
+      [0,1,2,1,0], // V
+      [2,1,0,1,2], // inverted V
+      [0,1,0,1,0], // zigzag
+      [2,1,2,1,2], // zigzag bottom
+      [1,0,1,2,1]  // W shape
+    ];
 
-  if (count >= 3) {
-    const payout = betAmount * count;
-    win += payout;
+    let win = 0;
+    let winningLines = [];
 
-    winningLines.push({
-      lineIndex: index,
-      length: count,
-      symbol: first || "🃏",
-      payout
+    // 🎯 CHECK PAYLINES
+    paylines.forEach((line, index) => {
+      let first = null;
+      let count = 0;
+
+      for (let c = 0; c < 5; c++) {
+        const symbol = grid[line[c]][c];
+
+        if (!first && symbol !== "🃏") {
+          first = symbol;
+        }
+
+        if (
+          symbol === first ||
+          symbol === "🃏" ||
+          first === null
+        ) {
+          count++;
+        } else {
+          break;
+        }
+      }
+
+      if (count >= 3) {
+        const payout = betAmount * count;
+        win += payout;
+
+        winningLines.push({
+          lineIndex: index,
+          length: count,
+          symbol: first || "🃏",
+          payout
+        });
+      }
     });
-  }
-});
+
+    // 💸 UPDATE BALANCE
+    user.balance -= betAmount;
+    user.balance += win;
+
+    // 🎯 XP + LEVEL
+    user.xp += betAmount;
+
+    const xpNeeded = user.level * 100;
+    if (user.xp >= xpNeeded) {
+      user.level += 1;
+      user.xp = 0;
+      user.balance += 500;
+    }
+
+    await user.save();
+
+    // ✅ FINAL RESPONSE (CRITICAL)
+    res.json({
+      reels: grid,
+      win,
+      balance: user.balance,
+      xp: user.xp,
+      level: user.level,
+      winningLines
+    });
 
   } catch (err) {
     console.error("SPIN ERROR:", err);
     res.status(500).json({ error: "Spin failed" });
   }
+});
+
+// 🔗 CONNECT DB + START SERVER
+mongoose.connect(process.env.MONGO_URI, {
+  serverSelectionTimeoutMS: 5000
+})
+.then(() => {
+  console.log("✅ MongoDB connected");
+
+  app.listen(process.env.PORT || 3000, "0.0.0.0", () => {
+    console.log("🚀 Server running");
+  });
+})
+.catch(err => {
+  console.error("❌ MongoDB error:", err);
 });
