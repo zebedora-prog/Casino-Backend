@@ -49,6 +49,8 @@ const winSound = new Audio("https://www.soundjay.com/misc/sounds/small-bell-ring
     }
 
     async function spin() {
+     spinSound.currentTime = 0;
+spinSound.play();
       if (!userId) {
         alert("Login first!");
         return;
@@ -93,8 +95,12 @@ setTimeout(() => {
   updateUI(data);
 }, 900);
 
-        document.getElementById("result").innerText =
-          data.win > 0 ? "🎉 YOU WON " + data.win : "Try again";
+       if (data.win > 0) {
+  winSound.play();
+  document.getElementById("result").innerText = "🎉 YOU WON " + data.win;
+} else {
+  document.getElementById("result").innerText = "Try again";
+}
 
         updateUI(data);
 
