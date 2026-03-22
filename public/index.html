@@ -270,7 +270,7 @@ function checkPaylines(grid, data) {
 
     let match = symbols.every(s => s === symbols[0] || s === "🃏");
 
-    if (match && data.win > 0) {
+    if (match)
       document.getElementById(line.id).style.display = "block";
 
       grid[line.row].forEach(cell =>
