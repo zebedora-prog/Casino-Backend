@@ -200,8 +200,8 @@ async function spin() {
         clearInterval(intervals[c]);
 
         for (let r = 0; r < rows; r++) {
-          grid[r][c].innerText = data.reels[c];
-        }
+  grid[r][c].innerText = data.reels[c][r];
+}
 
       }, 500 + c * 300);
     }
