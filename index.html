@@ -1,5 +1,12 @@
 <!DOCTYPE html>
 <html>
+<div style="margin:20px;">
+  <button onclick="setBet(10)">Bet 10</button>
+  <button onclick="setBet(50)">Bet 50</button>
+  <button onclick="setBet(100)">Bet 100</button>
+</div>
+
+<h3 id="betDisplay">Current Bet: 50</h3>  
 <head>
   <title>Casino Game</title>
 </head>
@@ -117,7 +124,7 @@ setTimeout(() => {
         return;
       }
 
-      const res = await fetch(`${API}/daily?userId=${userId}`);
+      const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}&machine=basic`)
       const data = await res.json();
 
       alert(data.message || data.error);
@@ -132,6 +139,11 @@ setTimeout(() => {
         document.getElementById("level").innerText = "Level: " + data.level;
     }
   </script>
+let betAmount = 50;
 
+function setBet(amount) {
+  betAmount = amount;
+  document.getElementById("betDisplay").innerText = "Current Bet: " + betAmount;
+}
 </body>
 </html>
