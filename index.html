@@ -1,25 +1,30 @@
 <!DOCTYPE html>
 <html>
-<div style="margin:20px;">
-  <button onclick="setBet(10)">Bet 10</button>
-  <button onclick="setBet(50)">Bet 50</button>
-  <button onclick="setBet(100)">Bet 100</button>
-</div>
-
-<h3 id="betDisplay">Current Bet: 50</h3>  
 <head>
   <title>Casino Game</title>
 </head>
+
 <body style="text-align:center; font-family:sans-serif; background:black; color:white;">
 
   <h1>🎰 Casino Game</h1>
 
+  <!-- 👤 LOGIN -->
   <input id="username" placeholder="Enter username">
   <button onclick="register()">Login</button>
 
   <h2 id="balance">Balance: 0</h2>
   <h3 id="level">Level: 1</h3>
 
+  <!-- 💰 BET SYSTEM -->
+  <div style="margin:20px;">
+    <button onclick="setBet(10)">Bet 10</button>
+    <button onclick="setBet(50)">Bet 50</button>
+    <button onclick="setBet(100)">Bet 100</button>
+  </div>
+
+  <h3 id="betDisplay">Current Bet: 50</h3>
+
+  <!-- 🎡 REELS -->
   <div style="font-size:60px; margin:20px;">
     <span id="r1">🎰</span>
     <span id="r2">🎰</span>
@@ -28,17 +33,29 @@
 
   <h2 id="result"></h2>
 
+  <!-- 🎮 ACTIONS -->
   <button onclick="spin()">SPIN</button>
   <button onclick="daily()">Daily</button>
 
   <script>
-let betAmount = 50;
-    const spinSound = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
-const winSound = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
-    
-    let userId = "";
+    let userId = localStorage.getItem("userId") || "";
+    let betAmount = 50;
+
     const API = "https://win-win-production.up.railway.app";
 
+    // 🔊 Sounds
+    const spinSound = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+    const winSound = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
+
+    // 🔓 Unlock sound
+    document.body.addEventListener("click", () => {
+      spinSound.play().then(() => {
+        spinSound.pause();
+        spinSound.currentTime = 0;
+      }).catch(() => {});
+    }, { once: true });
+
+    // 👤 LOGIN
     async function register() {
       const username = document.getElementById("username").value;
 
@@ -57,15 +74,23 @@ const winSound = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_a
       alert("Logged in!");
     }
 
+    // 💰 SET BET
+    function setBet(amount) {
+      betAmount = amount;
+      document.getElementById("betDisplay").innerText = "Current Bet: " + betAmount;
+    }
+
+    // 🎰 SPIN
     async function spin() {
-     spinSound.currentTime = 0;
-spinSound.play().catch(err => console.log("Sound blocked:", err));
       if (!userId) {
         alert("Login first!");
         return;
       }
 
       document.getElementById("result").innerText = "Spinning...";
+
+      spinSound.currentTime = 0;
+      spinSound.play().catch(() => {});
 
       const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑"];
 
@@ -76,42 +101,35 @@ spinSound.play().catch(err => console.log("Sound blocked:", err));
       }, 100);
 
       try {
-        const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}&machine=basic`)
+        const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}&machine=basic`);
         const data = await res.json();
 
         clearInterval(interval);
 
-        clearInterval(interval);
+        // 🎡 Reel stop animation
+        setTimeout(() => {
+          document.getElementById("r1").innerText = data.reels[0];
+        }, 200);
 
-// 🎡 Reel stop animation
-setTimeout(() => {
-  document.getElementById("r1").innerText = data.reels[0];
-}, 200);
+        setTimeout(() => {
+          document.getElementById("r2").innerText = data.reels[1];
+        }, 500);
 
-setTimeout(() => {
-  document.getElementById("r2").innerText = data.reels[1];
-}, 500);
+        setTimeout(() => {
+          document.getElementById("r3").innerText = data.reels[2];
+        }, 800);
 
-setTimeout(() => {
-  document.getElementById("r3").innerText = data.reels[2];
-}, 800);
+        // 🎯 Result
+        setTimeout(() => {
+          if (data.win > 0) {
+            winSound.play();
+            document.getElementById("result").innerText = "🎉 YOU WON " + data.win;
+          } else {
+            document.getElementById("result").innerText = "Try again";
+          }
 
-// 🎯 Show result after last reel
-setTimeout(() => {
-  document.getElementById("result").innerText =
-    data.win > 0 ? "🎉 YOU WON " + data.win : "Try again";
-
-  updateUI(data);
-}, 900);
-
-       if (data.win > 0) {
-  winSound.play();
-  document.getElementById("result").innerText = "🎉 YOU WON " + data.win;
-} else {
-  document.getElementById("result").innerText = "Try again";
-}
-
-        updateUI(data);
+          updateUI(data);
+        }, 900);
 
       } catch (err) {
         clearInterval(interval);
@@ -119,19 +137,21 @@ setTimeout(() => {
       }
     }
 
+    // 🎁 DAILY
     async function daily() {
       if (!userId) {
         alert("Login first!");
         return;
       }
 
-      const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}&machine=basic`)
+      const res = await fetch(`${API}/daily?userId=${userId}`);
       const data = await res.json();
 
       alert(data.message || data.error);
       updateUI(data);
     }
 
+    // 🔄 UPDATE UI
     function updateUI(data) {
       if (data.balance !== undefined)
         document.getElementById("balance").innerText = "Balance: " + data.balance;
@@ -140,12 +160,6 @@ setTimeout(() => {
         document.getElementById("level").innerText = "Level: " + data.level;
     }
   </script>
-let betAmount = 50;
 
-function setBet(amount) {
-  console.log("BET CLICKED:", amount);
-  betAmount = amount;
-  document.getElementById("betDisplay").innerText = "Current Bet: " + betAmount;
-}
 </body>
 </html>
