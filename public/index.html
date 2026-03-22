@@ -185,7 +185,9 @@ async function spin() {
       document.getElementById("winSound").play();
     }
 
-    checkPaylines(grid);
+    if (data.win > 0) {
+  checkPaylines(grid);
+}
 
   }, 500 + cols * 300);
 }
