@@ -267,25 +267,32 @@ function checkPaylines(grid) {
   lines.forEach(line => {
     const symbols = line.cells.map(c => c.innerText);
 
-    if (isWinningLine(symbols)) {
-      const el = document.getElementById(line.id);
+  const winCells = getWinningCells(line.cells);
 
-      if (el) {
-        el.style.display = "block";
-        el.style.animation = "none";
+if (winCells) {
+  const el = document.getElementById(line.id);
 
-        setTimeout(() => {
-          el.style.animation = "drawLine 0.4s ease-out forwards";
-        }, 10);
-      }
+  if (el) {
+    el.style.display = "block";
+    el.style.animation = "none";
 
-      line.cells.forEach(cell => cell.classList.add("win-symbol"));
+    setTimeout(() => {
+      el.style.animation = "drawLine 0.4s ease-out forwards";
+    }, 10);
+  }
 
-      setTimeout(() => {
-        if (el) {
-          el.style.display = "none";
-          el.style.width = "0%";
-        }
+  // 🎯 highlight ONLY winning symbols
+  winCells.forEach(cell => cell.classList.add("win-symbol"));
+
+  setTimeout(() => {
+    if (el) {
+      el.style.display = "none";
+      el.style.width = "0%";
+    }
+
+    winCells.forEach(cell => cell.classList.remove("win-symbol"));
+  }, 1500);
+}
 
         line.cells.forEach(cell => cell.classList.remove("win-symbol"));
       }, 1500);
