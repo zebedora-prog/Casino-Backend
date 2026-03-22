@@ -39,16 +39,22 @@
       justify-content: center;
     }
 
-   .payline {
-  position: absolute;
-  height: 4px;
-  width: 0%; /* 🔥 start invisible */
-  left: 5%;
-  display: none;
-  z-index: 10;
-  border-radius: 5px;
-  box-shadow: 0 0 10px red, 0 0 20px red;
-}
+    /* 🎯 PAYLINES */
+    .payline {
+      position: absolute;
+      height: 4px;
+      width: 0%;
+      left: 5%;
+      display: none;
+      z-index: 10;
+      border-radius: 5px;
+      box-shadow: 0 0 10px red, 0 0 20px red;
+    }
+
+    @keyframes drawLine {
+      from { width: 0%; }
+      to { width: 90%; }
+    }
 
     #line-top { top: 20%; background: red; }
     #line-mid { top: 50%; background: yellow; }
@@ -72,10 +78,10 @@
       animation: glow 0.5s infinite alternate;
     }
 
-   @keyframes drawLine {
-  from { width: 0%; }
-  to { width: 90%; }
-}
+    @keyframes glow {
+      from { box-shadow: 0 0 5px gold; }
+      to { box-shadow: 0 0 20px gold; }
+    }
 
     button {
       padding: 10px 20px;
@@ -117,8 +123,6 @@
 </div>
 
 <script>
-console.log("JS LOADED");
-
 const API = "https://win-win-production.up.railway.app";
 
 let userId = null;
@@ -126,108 +130,95 @@ let betAmount = 10;
 
 // ✅ LOGIN
 async function register() {
-  try {
-    const username = document.getElementById("username").value;
+  const username = document.getElementById("username").value;
+  if (!username) return alert("Enter username");
 
-    if (!username) return alert("Enter username");
+  const res = await fetch(`${API}/register?username=${username}`);
+  const data = await res.json();
 
-    const res = await fetch(`${API}/register?username=${username}`);
-    const data = await res.json();
+  if (data.error) return alert(data.error);
 
-    if (data.error) return alert(data.error);
-
-    userId = data.userId;
-    alert("Logged in!");
-
-  } catch (err) {
-    console.error(err);
-    alert("Login failed");
-  }
+  userId = data.userId;
+  alert("Logged in!");
 }
 
 // 🎰 SPIN
 async function spin() {
-  try {
-    if (!userId) return alert("Login first");
+  if (!userId) return alert("Login first");
 
-    const result = document.getElementById("result");
+  const result = document.getElementById("result");
 
-    const rows = 3;
-    const cols = 5;
+  const rows = 3;
+  const cols = 5;
 
-    const slots = document.getElementById("slots");
-    slots.innerHTML = "";
+  const slots = document.getElementById("slots");
+  slots.innerHTML = "";
 
-    let grid = [];
+  let grid = [];
 
-    // build grid
-    for (let r = 0; r < rows; r++) {
-      const rowDiv = document.createElement("div");
-      rowDiv.className = "row";
+  // build grid
+  for (let r = 0; r < rows; r++) {
+    const rowDiv = document.createElement("div");
+    rowDiv.className = "row";
 
-      grid[r] = [];
+    grid[r] = [];
 
-      for (let c = 0; c < cols; c++) {
-        const reel = document.createElement("div");
-        reel.className = "reel";
-        reel.innerText = "❓";
+    for (let c = 0; c < cols; c++) {
+      const reel = document.createElement("div");
+      reel.className = "reel";
+      reel.innerText = "❓";
 
-        grid[r][c] = reel;
-        rowDiv.appendChild(reel);
+      grid[r][c] = reel;
+      rowDiv.appendChild(reel);
+    }
+
+    slots.appendChild(rowDiv);
+  }
+
+  // fetch
+  const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}`);
+  const data = await res.json();
+
+  if (data.error) return alert(data.error);
+
+  const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑","🃏"];
+
+  const intervals = [];
+
+  // spin animation
+  for (let c = 0; c < cols; c++) {
+    intervals[c] = setInterval(() => {
+      for (let r = 0; r < rows; r++) {
+        grid[r][c].innerText =
+          symbols[Math.floor(Math.random() * symbols.length)];
+      }
+    }, 80);
+  }
+
+  // stop reels
+  for (let c = 0; c < cols; c++) {
+    setTimeout(() => {
+      clearInterval(intervals[c]);
+
+      for (let r = 0; r < rows; r++) {
+        grid[r][c].innerText = data.reels[c][r];
       }
 
-      slots.appendChild(rowDiv);
-    }
-
-    // fetch backend
-    const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}`);
-    const data = await res.json();
-
-    if (data.error) return alert(data.error);
-
-    const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑","🃏"];
-
-    // spin animation
-    const intervals = [];
-
-    for (let c = 0; c < cols; c++) {
-      intervals[c] = setInterval(() => {
-        for (let r = 0; r < rows; r++) {
-          grid[r][c].innerText =
-            symbols[Math.floor(Math.random() * symbols.length)];
-        }
-      }, 80);
-    }
-
-    // stop reels
-    for (let c = 0; c < cols; c++) {
-      setTimeout(() => {
-        clearInterval(intervals[c]);
-
-        for (let r = 0; r < rows; r++) {
-          grid[r][c].innerText = data.reels[c][r]; // ✅ FIXED
-        }
-
-      }, 500 + c * 300);
-    }
-
-    // result + paylines
-    setTimeout(() => {
-      result.innerText = data.win > 0
-        ? "🎉 WIN " + data.win
-        : "Try again";
-
-      checkPaylines(grid);
-
-    }, 500 + cols * 300);
-
-  } catch (err) {
-    console.error(err);
-    alert("Spin crashed");
+    }, 500 + c * 300);
   }
+
+  // result + paylines
+  setTimeout(() => {
+    result.innerText = data.win > 0
+      ? "🎉 WIN " + data.win
+      : "Try again";
+
+    checkPaylines(grid);
+
+  }, 500 + cols * 300);
 }
 
-// 🎯 PAYLINES (FIXED — no data.win restriction)
+// 🎯 PAYLINES WITH ANIMATION
 function checkPaylines(grid) {
   const lines = [
     { cells: [grid[0][0],grid[0][1],grid[0][2],grid[0][3],grid[0][4]], id:"line-top" },
@@ -244,34 +235,28 @@ function checkPaylines(grid) {
 
   lines.forEach(line => {
     const symbols = line.cells.map(c => c.innerText);
-
     let match = symbols.every(s => s === symbols[0] || s === "🃏");
 
     if (match) {
       const el = document.getElementById(line.id);
-     if (el) {
-  el.style.display = "block";
-  el.style.animation = "none"; // reset
 
-  // restart animation
- setTimeout(() => {
-  if (el) {
-    el.style.display = "none";
-    el.style.width = "0%"; // reset for next spin
-  }
-  el.style.display = "block";
-  el.style.animation = "none"; // reset
+      if (el) {
+        el.style.display = "block";
+        el.style.animation = "none";
 
-  // restart animation
-  setTimeout(() => {
-    el.style.animation = "drawLine 0.4s ease-out forwards";
-  }, 10);
-}
+        setTimeout(() => {
+          el.style.animation = "drawLine 0.4s ease-out forwards";
+        }, 10);
+      }
 
       line.cells.forEach(cell => cell.classList.add("win-symbol"));
 
       setTimeout(() => {
-        if (el) el.style.display = "none";
+        if (el) {
+          el.style.display = "none";
+          el.style.width = "0%";
+        }
+
         line.cells.forEach(cell => cell.classList.remove("win-symbol"));
       }, 1500);
     }
