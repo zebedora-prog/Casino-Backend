@@ -68,9 +68,28 @@
 
         clearInterval(interval);
 
-        document.getElementById("r1").innerText = data.reels[0];
-        document.getElementById("r2").innerText = data.reels[1];
-        document.getElementById("r3").innerText = data.reels[2];
+        clearInterval(interval);
+
+// 🎡 Reel stop animation
+setTimeout(() => {
+  document.getElementById("r1").innerText = data.reels[0];
+}, 200);
+
+setTimeout(() => {
+  document.getElementById("r2").innerText = data.reels[1];
+}, 500);
+
+setTimeout(() => {
+  document.getElementById("r3").innerText = data.reels[2];
+}, 800);
+
+// 🎯 Show result after last reel
+setTimeout(() => {
+  document.getElementById("result").innerText =
+    data.win > 0 ? "🎉 YOU WON " + data.win : "Try again";
+
+  updateUI(data);
+}, 900);
 
         document.getElementById("result").innerText =
           data.win > 0 ? "🎉 YOU WON " + data.win : "Try again";
