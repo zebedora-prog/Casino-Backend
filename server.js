@@ -40,7 +40,7 @@ mongoose.connect(process.env.MONGO_URI, {
 });
 
 // 🏠 Home
-app.get("/", (req, res) => {
+app.get("/spin", async (req, res) => {
   res.send("Backend is running 🚀");
 });
 
