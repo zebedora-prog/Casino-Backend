@@ -94,11 +94,13 @@
 
 <script>
 console.log("JS LOADED");
-  const API = "https://win-win-production.up.railway.app";
+
+const API = "https://win-win-production.up.railway.app";
 
 let userId = null;
 let betAmount = 10;
 
+// ✅ LOGIN FIXED
 async function register() {
   try {
     const username = document.getElementById("username").value;
@@ -118,7 +120,7 @@ async function register() {
 
     userId = data.userId;
 
-    console.log("USER ID:", userId); // 👈 debug
+    console.log("USER ID:", userId);
     alert("Logged in!");
 
   } catch (err) {
@@ -126,86 +128,95 @@ async function register() {
     alert("Login failed");
   }
 }
+
+// 🎰 SPIN (FULLY SAFE)
 async function spin() {
-  if (!userId) return alert("Login first");
+  try {
+    if (!userId) return alert("Login first");
 
-  const result = document.getElementById("result");
+    const result = document.getElementById("result");
 
-  // 🎰 BUILD GRID
-  const rows = 3;
-  const cols = 5;
+    const rows = 3;
+    const cols = 5;
 
-  const slots = document.getElementById("slots");
-  slots.innerHTML = "";
+    const slots = document.getElementById("slots");
+    slots.innerHTML = "";
 
-  let grid = [];
+    let grid = [];
 
-  for (let r = 0; r < rows; r++) {
-    const rowDiv = document.createElement("div");
-    rowDiv.className = "row";
+    // 🔨 build grid
+    for (let r = 0; r < rows; r++) {
+      const rowDiv = document.createElement("div");
+      rowDiv.className = "row";
 
-    grid[r] = [];
+      grid[r] = [];
+
+      for (let c = 0; c < cols; c++) {
+        const reel = document.createElement("div");
+        reel.className = "reel";
+        reel.innerText = "❓";
+
+        grid[r][c] = reel;
+        rowDiv.appendChild(reel);
+      }
+
+      slots.appendChild(rowDiv);
+    }
+
+    // 🎯 fetch result FIRST (important)
+    const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}`);
+    const data = await res.json();
+
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
+
+    const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑","🃏"];
+
+    // 🎰 start spinning
+    const intervals = [];
 
     for (let c = 0; c < cols; c++) {
-      const reel = document.createElement("div");
-      reel.className = "reel";
-      reel.innerText = "❓";
-
-      grid[r][c] = reel;
-      rowDiv.appendChild(reel);
+      intervals[c] = setInterval(() => {
+        for (let r = 0; r < rows; r++) {
+          grid[r][c].innerText =
+            symbols[Math.floor(Math.random() * symbols.length)];
+        }
+      }, 80);
     }
 
-    slots.appendChild(rowDiv);
+    // 🛑 stop reels one by one
+    for (let c = 0; c < cols; c++) {
+      setTimeout(() => {
+        clearInterval(intervals[c]);
+
+        for (let r = 0; r < rows; r++) {
+          grid[r][c].innerText = data.reels[c];
+        }
+
+      }, 500 + c * 300);
+    }
+
+    // 🎉 result after spin
+    setTimeout(() => {
+      if (data.win > 0) {
+        result.innerText = "🎉 WIN " + data.win;
+      } else {
+        result.innerText = "Try again";
+      }
+
+      checkPaylines(grid, data);
+
+    }, 500 + cols * 300);
+
+  } catch (err) {
+    console.error("SPIN ERROR:", err);
+    alert("Spin crashed");
   }
-
-  // 🎯 FETCH RESULT
-  const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}`);
-  const data = await res.json();
-
-  // 🎰 FILL GRID
- const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑","🃏"];
-
-// 🎰 fake spinning
-const intervals = [];
-
-for (let c = 0; c < grid[0].length; c++) {
-  intervals[c] = setInterval(() => {
-    for (let r = 0; r < grid.length; r++) {
-      grid[r][c].innerText =
-        symbols[Math.floor(Math.random() * symbols.length)];
-    }
-  }, 80);
 }
 
-// 🛑 stop reels one by one
-for (let c = 0; c < grid[0].length; c++) {
-  setTimeout(() => {
-    clearInterval(intervals[c]);
-
-    for (let r = 0; r < grid.length; r++) {
-      grid[r][c].innerText = data.reels[c];
-    }
-
-  }, 500 + c * 300); // delay per reel
-}
-
-  // 🎉 RESULT
- setTimeout(() => {
-
-  if (data.win > 0) {
-    result.innerText = "🎉 WIN " + data.win;
-  } else {
-    result.innerText = "Try again";
-  }
-
-  checkPaylines(grid, data);
-
-}, 500 + grid[0].length * 300);
-
-  // 🎯 PAYLINES
-  checkPaylines(grid, data);
-}, 400 + grid[0].length * 300);
-
+// 🎯 PAYLINES
 function checkPaylines(grid, data) {
   const paylines = [
     { row: 0, id: "line-top" },
