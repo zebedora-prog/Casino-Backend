@@ -39,8 +39,8 @@ mongoose.connect(process.env.MONGO_URI, {
   console.error(err);
 });
 
-// 🏠 Home
-app.get("/spin", async (req, res) => {
+// 🏠 Home route
+app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
 
@@ -70,15 +70,20 @@ app.get("/register", async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
+    console.error("REGISTER ERROR:", err);
+    res.status(500).json({ error: "Register failed" });
   }
 });
 
-// 🎰 Spin (MULTI-MACHINE)
+// 🎰 Spin route
 app.get("/spin", async (req, res) => {
   try {
     const { userId, bet, machine } = req.query;
+
+    if (!userId) {
+      return res.json({ error: "userId required" });
+    }
+
     const betAmount = parseInt(bet) || 10;
 
     const user = await User.findById(userId);
@@ -94,7 +99,6 @@ app.get("/spin", async (req, res) => {
       });
     }
 
-    // Select machine
     const selected = machines[machine] || machines.basic;
     const symbols = selected.symbols;
 
@@ -126,7 +130,7 @@ app.get("/spin", async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("SPIN ERROR:", err);
     res.status(500).json({ error: "Spin failed" });
   }
 });
