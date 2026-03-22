@@ -99,16 +99,32 @@ let userId = null;
 let betAmount = 10;
 
 async function register() {
-  const username = document.getElementById("username").value;
+  try {
+    const username = document.getElementById("username").value;
 
-  const res = await fetch(`${API}/register?username=${username}`);
-  const data = await res.json();
+    if (!username) {
+      alert("Enter username");
+      return;
+    }
 
-  userId = data.userId;
+    const res = await fetch(`${API}/register?username=${username}`);
+    const data = await res.json();
 
-  alert("Logged in!");
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
+
+    userId = data.userId;
+
+    console.log("USER ID:", userId); // 👈 debug
+    alert("Logged in!");
+
+  } catch (err) {
+    console.error("LOGIN ERROR:", err);
+    alert("Login failed");
+  }
 }
-
 async function spin() {
   if (!userId) return alert("Login first");
 
