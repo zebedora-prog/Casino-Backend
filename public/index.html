@@ -228,19 +228,25 @@ async function spin() {
 }
 
 // 🎯 REAL MATCH LOGIC (3+)
-function isWinningLine(symbols) {
-  let first = symbols[0];
-  let count = 1;
+function getWinningCells(cells) {
+  let first = cells[0].innerText;
+  let winning = [cells[0]];
 
-  for (let i = 1; i < symbols.length; i++) {
-    if (symbols[i] === first || symbols[i] === "🃏" || first === "🃏") {
-      count++;
+  for (let i = 1; i < cells.length; i++) {
+    let current = cells[i].innerText;
+
+    if (
+      current === first ||
+      current === "🃏" ||
+      first === "🃏"
+    ) {
+      winning.push(cells[i]);
     } else {
       break;
     }
   }
 
-  return count >= 3;
+  return winning.length >= 3 ? winning : null;
 }
 
 // 🎯 PAYLINES WITH ANIMATION
