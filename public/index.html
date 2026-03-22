@@ -1,6 +1,38 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <style>
+/* 🎰 SLOT WRAPPER */
+#slotWrapper {
+  position: relative;
+  width: fit-content;
+  margin: auto;
+}
+
+/* 🎯 PAYLINE */
+#payline {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 90%;
+  height: 4px;
+  background: red;
+  transform: translate(-50%, -50%);
+  display: none;
+  box-shadow: 0 0 10px red, 0 0 20px red;
+  z-index: 10;
+}
+
+/* ✨ WIN GLOW */
+.win-symbol {
+  animation: glow 0.5s infinite alternate;
+}
+
+@keyframes glow {
+  from { box-shadow: 0 0 5px gold; }
+  to { box-shadow: 0 0 20px gold; }
+}
+</style>
   <title>Casino Slots</title>
   <style>
     body { background: black; color: white; text-align: center; font-family: Arial; }
