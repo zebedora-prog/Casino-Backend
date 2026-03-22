@@ -100,51 +100,71 @@ app.get("/spin", async (req, res) => {
   )
 );
 
-    let win = 0;
+   const paylines = [
+  [0,0,0,0,0], // top
+  [1,1,1,1,1], // middle
+  [2,2,2,2,2], // bottom
 
-    function match(a, b) {
-      return a === b || a === "🃏" || b === "🃏";
+  [0,1,2,1,0], // diag down
+  [2,1,0,1,2], // diag up
+
+  [0,1,0,1,0], // zigzag
+  [2,1,2,1,2],
+  [1,0,1,2,1]
+];
+
+// 🎰 build 3x5 grid
+const grid = Array.from({ length: 3 }, () => []);
+
+for (let c = 0; c < 5; c++) {
+  const col = [];
+  for (let r = 0; r < 3; r++) {
+    col.push(symbols[Math.floor(Math.random() * symbols.length)]);
+  }
+  for (let r = 0; r < 3; r++) {
+    if (!grid[r]) grid[r] = [];
+    grid[r][c] = col[r];
+  }
+}
+
+let win = 0;
+let winningLines = [];
+
+// 🎯 check paylines
+paylines.forEach((line, index) => {
+  let first = null;
+  let count = 0;
+
+  for (let c = 0; c < 5; c++) {
+    const symbol = grid[line[c]][c];
+
+    if (!first && symbol !== "🃏") {
+      first = symbol;
     }
 
-    let streak = 1;
-
-    for (let i = 1; i < reels.length; i++) {
-      if (match(reels[i], reels[i - 1])) {
-        streak++;
-      } else {
-        break;
-      }
+    if (
+      symbol === first ||
+      symbol === "🃏" ||
+      first === null
+    ) {
+      count++;
+    } else {
+      break;
     }
+  }
 
-    if (streak >= 3) win += betAmount * 2;
-    if (streak >= 4) win += betAmount * 5;
-    if (streak >= 5) win += betAmount * 10;
+  if (count >= 3) {
+    const payout = betAmount * count;
+    win += payout;
 
-    if (Math.random() > 0.7) {
-      win += betAmount * 2;
-    }
-
-    user.balance -= betAmount;
-    user.balance += win;
-
-    user.xp += betAmount;
-
-    const xpNeeded = user.level * 100;
-    if (user.xp >= xpNeeded) {
-      user.level += 1;
-      user.xp = 0;
-      user.balance += 500;
-    }
-
-    await user.save();
-
-    res.json({
-      reels,
-      win,
-      balance: user.balance,
-      xp: user.xp,
-      level: user.level
+    winningLines.push({
+      lineIndex: index,
+      length: count,
+      symbol: first || "🃏",
+      payout
     });
+  }
+});
 
   } catch (err) {
     console.error("SPIN ERROR:", err);
