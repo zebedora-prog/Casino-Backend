@@ -2,10 +2,10 @@ const express = require("express");
 const mongoose = require("mongoose");
 
 const app = express();
-app.use(express.json());
-https://your-railway-url/index.html
 
-// User schema
+app.use(express.json());
+app.use(express.static(__dirname));
+
 const User = mongoose.model("User", {
   username: String,
   balance: Number,
