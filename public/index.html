@@ -39,16 +39,16 @@
       justify-content: center;
     }
 
-    .payline {
-      position: absolute;
-      height: 4px;
-      width: 90%;
-      left: 50%;
-      transform: translateX(-50%);
-      display: none;
-      z-index: 10;
-      box-shadow: 0 0 10px red, 0 0 20px red;
-    }
+   .payline {
+  position: absolute;
+  height: 4px;
+  width: 0%; /* 🔥 start invisible */
+  left: 5%;
+  display: none;
+  z-index: 10;
+  border-radius: 5px;
+  box-shadow: 0 0 10px red, 0 0 20px red;
+}
 
     #line-top { top: 20%; background: red; }
     #line-mid { top: 50%; background: yellow; }
@@ -72,10 +72,10 @@
       animation: glow 0.5s infinite alternate;
     }
 
-    @keyframes glow {
-      from { box-shadow: 0 0 5px gold; }
-      to { box-shadow: 0 0 20px gold; }
-    }
+   @keyframes drawLine {
+  from { width: 0%; }
+  to { width: 90%; }
+}
 
     button {
       padding: 10px 20px;
@@ -249,7 +249,24 @@ function checkPaylines(grid) {
 
     if (match) {
       const el = document.getElementById(line.id);
-      if (el) el.style.display = "block";
+     if (el) {
+  el.style.display = "block";
+  el.style.animation = "none"; // reset
+
+  // restart animation
+ setTimeout(() => {
+  if (el) {
+    el.style.display = "none";
+    el.style.width = "0%"; // reset for next spin
+  }
+  el.style.display = "block";
+  el.style.animation = "none"; // reset
+
+  // restart animation
+  setTimeout(() => {
+    el.style.animation = "drawLine 0.4s ease-out forwards";
+  }, 10);
+}
 
       line.cells.forEach(cell => cell.classList.add("win-symbol"));
 
