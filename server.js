@@ -1,10 +1,13 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const cors = require("cors");
-app.use(cors());
+const path = require("path");
+
 const app = express();
-
-
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "*");
+  next();
+});
 app.use(express.json());
 
 // 👤 User Schema
