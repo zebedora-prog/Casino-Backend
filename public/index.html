@@ -95,7 +95,7 @@ const API = "https://win-win-production.up.railway.app";
 let userId = null;
 let betAmount = 10;
 
-// 🎰 CREATE 3x5 GRID
+// 🎰 CREATE GRID
 function createReels() {
   const slots = document.getElementById("slots");
   slots.innerHTML = "";
@@ -105,10 +105,10 @@ function createReels() {
     row.className = "row";
 
     for (let c = 0; c < 5; c++) {
-      const reel = document.createElement("div");
-      reel.className = "reel";
-      reel.innerText = "❓";
-      row.appendChild(reel);
+      const cell = document.createElement("div");
+      cell.className = "reel";
+      cell.innerText = "❓";
+      row.appendChild(cell);
     }
 
     slots.appendChild(row);
@@ -123,7 +123,7 @@ function register() {
 
   if (!username) return alert("Enter username");
 
-  fetch(`${API}/register?username=${username}`)
+  fetch(${API}/register?username=${username})
     .then(res => res.json())
     .then(data => {
       if (!data || data.error) {
@@ -144,7 +144,7 @@ function changeBet(bet) {
   document.getElementById("betDisplay").innerText = bet;
 }
 
-// 🎯 HIGHLIGHT WINS
+// 🎯 HIGHLIGHT WINNING SYMBOLS
 function highlightWins(winningLines) {
   const reels = document.querySelectorAll(".reel");
 
@@ -197,7 +197,7 @@ async function spin() {
   let data;
 
   try {
-    const res = await fetch(`${API}/spin?userId=${userId}&bet=${betAmount}`);
+    const res = await fetch(${API}/spin?userId=${userId}&bet=${betAmount});
     data = await res.json();
 
     if (!data || data.error) {
@@ -210,25 +210,19 @@ async function spin() {
     return;
   }
 
- // 🛑 STOP REELS
-for (let c = 0; c < 5; c++) {
-  setTimeout(() => {
-    clearInterval(intervals[c]);
+  // 🛑 STOP REELS (FIXED: row-first)
+  for (let c = 0; c < 5; c++) {
+    setTimeout(() => {
+      clearInterval(intervals[c]);
 
-    for (let r = 0; r < 3; r++) {
-      const index = r * 5 + c;
+      for (let r = 0; r < 3; r++) {
+        const index = r * 5 + c;
+        reels[index].innerText = data.reels[r][c];
+      }
 
-      // 🔥 SAFE ACCESS (fixes undefined + misalignment)
-      const symbol =
-        (data.reels[c] && data.reels[c][r]) ??
-        (data.reels[r] && data.reels[r][c]) ??
-        "❓";
+    }, c * 300);
+  }
 
-      reels[index].innerText = symbol;
-    }
-
-  }, c * 300);
-}
   // 🎯 FINAL RESULT
   setTimeout(() => {
     result.innerText = data.win > 0 ? "🎉 WIN " + data.win : "Lose";
