@@ -80,15 +80,11 @@ app.get("/spin", async (req, res) => {
     const symbols = ["🍒","🍋","🔔","💎","7️⃣","👑","🃏"];
 
     // 🎰 BUILD 3x5 GRID (ROWS x COLS)
-    const grid = Array.from({ length: 3 }, () => []);
-
-    for (let c = 0; c < 5; c++) {
-      for (let r = 0; r < 3; r++) {
-        grid[r][c] =
-          symbols[Math.floor(Math.random() * symbols.length)];
-      }
-    }
-
+   const grid = Array.from({ length: 3 }, () =>
+  Array.from({ length: 5 }, () =>
+    symbols[Math.floor(Math.random() * symbols.length)]
+  )
+);
     // 🎯 PAYLINES
     const paylines = [
       [0,0,0,0,0], // top
